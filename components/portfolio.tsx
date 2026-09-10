@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Image from 'next/image';
-import { ArrowDownRight, ArrowUpRight, BriefcaseBusiness, Check, Code2, Download, GitFork, Mail, Menu, Moon, Pencil, Plus, Save, Sparkles, Sun, Trash2, X } from 'lucide-react';
+import { ArrowUpRight, BriefcaseBusiness, Check, Download, GitFork, Mail, Menu, Moon, Pencil, Plus, Save, Sun, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { defaultPortfolio, type PortfolioData } from '@/lib/portfolio';
 
-const nav = ['About', 'Experience', 'Skills', 'Projects', 'Learning', 'Contact'];
+const nav = ['About', 'Experience', 'Projects', 'Contact'];
 const accents = ['#c7ff4a', '#70a5ff', '#ff8b6a', '#d6a7ff', '#6de2c5'];
 
 function Field({ label, value, onChange, multiline = false }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean }) {
@@ -156,42 +156,45 @@ export function Portfolio() {
   return <div className="site-shell">
     <header className="topbar">
       <a className="wordmark" href="#about"><span>{initials || 'YN'}</span>{data.hero.name}</a>
-      <nav className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation">{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenu(false)}>{item}</a>)}</nav>
+      <nav id="main-navigation" className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation" onKeyDown={(event) => { if (event.key === 'Escape') setMenu(false); }}>{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenu(false)}>{item}</a>)}</nav>
       <div className="header-actions">
         <button className="icon-button" onClick={toggleTheme} aria-label="Toggle dark mode">{dark ? <Sun /> : <Moon />}</button>
         {canEdit && <Sheet><SheetTrigger render={<button className="edit-button" aria-label="Edit site content" />}><Pencil /> Edit site</SheetTrigger><Editor data={data} setData={setData} onSave={save} saving={saving} saved={saved} /></Sheet>}
-        <button className="icon-button menu-button" onClick={() => setMenu(!menu)} aria-label="Toggle menu">{menu ? <X /> : <Menu />}</button>
+        <button className="icon-button menu-button" onClick={() => setMenu(!menu)} aria-label="Toggle menu" aria-expanded={menu} aria-controls="main-navigation">{menu ? <X /> : <Menu />}</button>
       </div>
     </header>
 
     <main className={loading ? 'loading-content' : ''}>
       <section className="hero" id="about">
         <div className="hero-kicker reveal"><span className="status-dot" /> {data.hero.availability}</div>
-        <h1 className="reveal">{data.hero.tagline}</h1>
+        <div className="hero-profile reveal">
+          <div className="portrait" aria-label={`Profile photo of ${data.hero.name}`}>{data.hero.photoUrl ? <Image src={data.hero.photoUrl} alt={data.hero.name} fill sizes="80px" unoptimized priority /> : <span>{initials || 'YN'}</span>}</div>
+          <div><h1>{data.hero.name}</h1><p className="hero-role">{data.hero.role}</p></div>
+        </div>
+        <p className="hero-tagline reveal">{data.hero.tagline}</p>
         <div className="hero-lower reveal">
-          <div className="identity"><div className="portrait" aria-label={`Profile photo of ${data.hero.name}`}>{data.hero.photoUrl ? <Image src={data.hero.photoUrl} alt={data.hero.name} fill sizes="68px" unoptimized priority /> : <span>{initials || 'YN'}</span>}</div><div><strong>{data.hero.name}</strong><span>{data.hero.role}</span></div></div>
           <div className="intro-copy"><p>{data.hero.bio}</p><span>{data.hero.location}</span></div>
           <div className="socials"><a href={data.hero.github} target="_blank" rel="noreferrer" aria-label="GitHub"><GitFork /></a><a href={data.hero.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn"><BriefcaseBusiness /></a><a href={`mailto:${data.hero.email}`} aria-label="Email"><Mail /></a></div>
         </div>
-        <a className="scroll-cue" href="#experience">Scroll to explore <ArrowDownRight /></a>
+        <div className="hero-actions"><a className="primary-link" href="#projects">View projects <ArrowUpRight /></a><a className="secondary-link" href={data.resumeUrl} target="_blank" rel="noreferrer">View résumé <Download /></a></div>
       </section>
 
-      <section className="section" id="experience"><div className="section-heading"><span>01</span><h2>Experience</h2><p>Where I’ve made an impact.</p></div><div className="timeline">
-        {data.experience.map((item, i) => <article className="role" key={`${item.company}-${i}`}><div className="role-number">{String(i + 1).padStart(2, '0')}</div><div><span className="role-dates">{item.dates}</span><h3>{item.title}</h3><h4>{item.company}</h4></div><ul>{item.bullets.filter(Boolean).map((bullet, x) => <li key={x}>{bullet}</li>)}</ul></article>)}
+      <section className="section" id="experience"><div className="section-heading"><h2>Experience</h2></div><div className="timeline">
+        {data.experience.map((item, i) => <article className="role" key={`${item.company}-${i}`}><div><span className="role-dates">{item.dates}</span><h3>{item.title}</h3><h4>{item.company}</h4></div><ul>{item.bullets.filter(Boolean).map((bullet, x) => <li key={x}>{bullet}</li>)}</ul></article>)}
       </div></section>
 
-      <section className="section skills-section" id="skills"><div className="section-heading"><span>02</span><h2>Toolkit</h2><p>What I use to make ideas real.</p></div><div className="skill-grid">
-        {data.skills.map((group, i) => <article key={`${group.category}-${i}`}><span>{String(i + 1).padStart(2, '0')}</span><h3>{group.category}</h3><div>{group.items.map(item => <em key={item}>{item}</em>)}</div></article>)}
+      <section className="section skills-section" id="skills"><div className="section-heading"><h2>Skills</h2></div><div className="skill-grid">
+        {data.skills.map((group, i) => <article key={`${group.category}-${i}`}><h3>{group.category}</h3><div>{group.items.map(item => <em key={item}>{item}</em>)}</div></article>)}
       </div></section>
 
-      <section className="section" id="projects"><div className="section-heading"><span>03</span><h2>Selected work</h2><p>A few things I’m proud to have built.</p></div><div className="project-grid">
-        {data.projects.map((project, i) => <article className="project-card" key={`${project.title}-${i}`}><div className="project-visual" style={{ '--accent': project.accent } as CSSProperties}><span className="project-index">0{i + 1}</span><Code2 /><strong>{project.title.slice(0, 1)}</strong></div><div className="project-copy"><div className="project-title"><h3>{project.title}</h3><div><a href={project.githubUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} GitHub`}><GitFork /></a><a href={project.liveUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} live site`}><ArrowUpRight /></a></div></div><p>{project.description}</p><div className="stack">{project.stack.map(tech => <span key={tech}>{tech}</span>)}</div></div></article>)}
+      <section className="section" id="projects"><div className="section-heading"><h2>Selected projects</h2></div><div className="project-grid">
+        {data.projects.map((project, i) => <article className="project-card" key={`${project.title}-${i}`}><div className="project-visual" aria-hidden="true" style={{ '--project-accent': project.accent } as CSSProperties}><strong>{project.title.slice(0, 1)}</strong></div><div className="project-copy"><div className="project-title"><h3>{project.title}</h3><div><a href={project.githubUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} GitHub`}><GitFork /></a><a href={project.liveUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} live site`}><ArrowUpRight /></a></div></div><p>{project.description}</p><div className="stack">{project.stack.map(tech => <span key={tech}>{tech}</span>)}</div></div></article>)}
       </div></section>
 
-      <section className="learning section" id="learning"><div><span className="eyebrow"><Sparkles /> In progress</span><h2>Always<br />learning.</h2></div><div className="learning-list">{data.learning.map((item, i) => <div key={item}><span>{String(i + 1).padStart(2, '0')}</span><strong>{item}</strong><ArrowUpRight /></div>)}</div></section>
+      <section className="learning section" id="learning"><h2>Currently learning</h2><div className="learning-list">{data.learning.map(item => <span key={item}>{item}</span>)}</div></section>
 
-      <section className="contact section" id="contact"><span className="eyebrow">Let’s build something good</span><h2>{data.contact.heading}</h2><p>{data.contact.note}</p><div className="contact-actions"><a className="primary-link" href={`mailto:${data.hero.email}`}>Start a conversation <ArrowUpRight /></a><a className="secondary-link" href={data.resumeUrl} target="_blank" rel="noreferrer">View résumé <Download /></a></div></section>
+      <section className="contact section" id="contact"><h2>{data.contact.heading}</h2><p>{data.contact.note}</p><div className="contact-actions"><a className="primary-link" href={`mailto:${data.hero.email}`}>Start a conversation <ArrowUpRight /></a><a className="secondary-link" href={data.resumeUrl} target="_blank" rel="noreferrer">View résumé <Download /></a></div></section>
     </main>
-    <footer><span>© {new Date().getFullYear()} {data.hero.name}</span><span>Designed & built with care.</span><a href="#about">Back to top ↑</a></footer>
+    <footer><span>© {new Date().getFullYear()} {data.hero.name}</span><a href="#about">Back to top ↑</a></footer>
   </div>;
 }
