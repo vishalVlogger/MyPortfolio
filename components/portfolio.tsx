@@ -6,6 +6,7 @@ import { ArrowUpRight, BriefcaseBusiness, Check, Download, GitFork, Mail, Menu, 
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { defaultPortfolio, type PortfolioData } from '@/lib/portfolio';
+import { ContactForm } from '@/components/contact-form';
 
 const nav = ['About', 'Experience', 'Projects', 'Contact'];
 const accents = ['#c7ff4a', '#70a5ff', '#ff8b6a', '#d6a7ff', '#6de2c5'];
@@ -17,6 +18,24 @@ function Field({ label, value, onChange, multiline = false }: { label: string; v
       {multiline ? <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={4} /> : <input value={value} onChange={(e) => onChange(e.target.value)} />}
     </label>
   );
+}
+
+/** Preserve the raw text while focused; parsing must not eat a typed comma. */
+function ListField({ label, items, onChange }: { label: string; items: string[]; onChange: (items: string[]) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return <label className="editor-field">
+    <span>{label}</span>
+    <input
+      value={draft ?? items.join(', ')}
+      onFocus={(event) => setDraft(event.currentTarget.value)}
+      onChange={(event) => {
+        const text = event.currentTarget.value;
+        setDraft(text);
+        onChange([...new Set(text.split(',').map(item => item.trim()).filter(Boolean))]);
+      }}
+      onBlur={() => setDraft(null)}
+    />
+  </label>;
 }
 
 function Editor({ data, setData, onSave, saving, saved }: { data: PortfolioData; setData: (data: PortfolioData) => void; onSave: () => void; saving: boolean; saved: boolean }) {
@@ -53,7 +72,7 @@ function Editor({ data, setData, onSave, saving, saved }: { data: PortfolioData;
           {data.skills.map((group, i) => <div className="editor-card" key={i}>
             <button aria-label="Remove skill group" onClick={() => setData({ ...data, skills: data.skills.filter((_, x) => x !== i) })}><Trash2 /></button>
             <Field label="Category" value={group.category} onChange={(v) => { const a = [...data.skills]; a[i] = { ...group, category: v }; setData({ ...data, skills: a }); }} />
-            <Field label="Skills (comma separated)" value={group.items.join(', ')} onChange={(v) => { const a = [...data.skills]; a[i] = { ...group, items: v.split(',').map(s => s.trim()).filter(Boolean) }; setData({ ...data, skills: a }); }} />
+            <ListField label="Skills (comma separated)" items={group.items} onChange={(items) => { const a = [...data.skills]; a[i] = { ...group, items }; setData({ ...data, skills: a }); }} />
           </div>)}
           <button className="add-button" onClick={() => setData({ ...data, skills: [...data.skills, { category: 'Category', items: ['Skill'] }] })}><Plus /> Add group</button>
         </div></details>
@@ -63,7 +82,7 @@ function Editor({ data, setData, onSave, saving, saved }: { data: PortfolioData;
             <button aria-label="Remove project" onClick={() => setData({ ...data, projects: data.projects.filter((_, x) => x !== i) })}><Trash2 /></button>
             <Field label="Title" value={project.title} onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, title: v }; setData({ ...data, projects: a }); }} />
             <Field label="Description" value={project.description} multiline onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, description: v }; setData({ ...data, projects: a }); }} />
-            <Field label="Tech stack (comma separated)" value={project.stack.join(', ')} onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, stack: v.split(',').map(s => s.trim()).filter(Boolean) }; setData({ ...data, projects: a }); }} />
+            <ListField label="Tech stack (comma separated)" items={project.stack} onChange={(stack) => { const a = [...data.projects]; a[i] = { ...project, stack }; setData({ ...data, projects: a }); }} />
             <Field label="Live URL" value={project.liveUrl} onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, liveUrl: v }; setData({ ...data, projects: a }); }} />
             <Field label="GitHub URL" value={project.githubUrl} onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, githubUrl: v }; setData({ ...data, projects: a }); }} />
             <label className="color-field"><span>Accent</span><input type="color" value={project.accent} onChange={(e) => { const a = [...data.projects]; a[i] = { ...project, accent: e.target.value }; setData({ ...data, projects: a }); }} /></label>
@@ -72,8 +91,9 @@ function Editor({ data, setData, onSave, saving, saved }: { data: PortfolioData;
         </div></details>
 
         <details><summary>Learning, resume & contact</summary><div className="editor-group">
-          <Field label="Currently learning (comma separated)" value={data.learning.join(', ')} onChange={(v) => setData({ ...data, learning: v.split(',').map(s => s.trim()).filter(Boolean) })} />
+          <ListField label="Currently learning (comma separated)" items={data.learning} onChange={(learning) => setData({ ...data, learning })} />
           <Field label="Resume URL" value={data.resumeUrl} onChange={(v) => setData({ ...data, resumeUrl: v })} />
+          <Field label="Receive contact messages at" value={data.contact.email ?? ''} onChange={(email) => setData({ ...data, contact: { ...data.contact, email } })} />
           <Field label="Contact heading" value={data.contact.heading} onChange={(v) => setData({ ...data, contact: { ...data.contact, heading: v } })} />
           <Field label="Contact note" value={data.contact.note} multiline onChange={(v) => setData({ ...data, contact: { ...data.contact, note: v } })} />
         </div></details>
@@ -138,7 +158,7 @@ export function Portfolio() {
       ),
     ])
       .then(([content, session]) => {
-        setData(content);
+        setData({ ...content, contact: { ...defaultPortfolio.contact, ...content.contact } });
         setCanEdit(session.canEdit);
       })
       .catch(() => undefined)
@@ -156,7 +176,7 @@ export function Portfolio() {
   return <div className="site-shell">
     <header className="topbar">
       <a className="wordmark" href="#about"><span>{initials || 'YN'}</span>{data.hero.name}</a>
-      <nav id="main-navigation" className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation" onKeyDown={(event) => { if (event.key === 'Escape') setMenu(false); }}>{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenu(false)}>{item}</a>)}</nav>
+      <nav id="main-navigation" className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation">{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} onKeyDown={(event) => { if (event.key === 'Escape') setMenu(false); }} onClick={() => setMenu(false)}>{item}</a>)}</nav>
       <div className="header-actions">
         <button className="icon-button" onClick={toggleTheme} aria-label="Toggle dark mode">{dark ? <Sun /> : <Moon />}</button>
         {canEdit && <Sheet><SheetTrigger render={<button className="edit-button" aria-label="Edit site content" />}><Pencil /> Edit site</SheetTrigger><Editor data={data} setData={setData} onSave={save} saving={saving} saved={saved} /></Sheet>}
@@ -193,7 +213,7 @@ export function Portfolio() {
 
       <section className="learning section" id="learning"><h2>Currently learning</h2><div className="learning-list">{data.learning.map(item => <span key={item}>{item}</span>)}</div></section>
 
-      <section className="contact section" id="contact"><h2>{data.contact.heading}</h2><p>{data.contact.note}</p><div className="contact-actions"><a className="primary-link" href={`mailto:${data.hero.email}`}>Start a conversation <ArrowUpRight /></a><a className="secondary-link" href={data.resumeUrl} target="_blank" rel="noreferrer">View résumé <Download /></a></div></section>
+      <section className="contact section" id="contact"><div className="contact-intro"><h2>{data.contact.heading}</h2><p>{data.contact.note}</p><div className="contact-actions"><a className="secondary-link" href={`mailto:${data.contact.email || data.hero.email}`}>Email directly <Mail /></a><a className="secondary-link" href={data.resumeUrl} target="_blank" rel="noreferrer">View résumé <Download /></a></div></div><ContactForm recipient={data.contact.email || data.hero.email} /></section>
     </main>
     <footer><span>© {new Date().getFullYear()} {data.hero.name}</span><a href="#about">Back to top ↑</a></footer>
   </div>;

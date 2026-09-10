@@ -8,7 +8,7 @@ export type PortfolioData = {
   projects: Project[];
   learning: string[];
   resumeUrl: string;
-  contact: { heading: string; note: string };
+  contact: { heading: string; note: string; email?: string };
 };
 
 export const defaultPortfolio: PortfolioData = {
@@ -36,5 +36,5 @@ export const defaultPortfolio: PortfolioData = {
   ],
   learning: ['Rust', 'System Design', 'AWS'],
   resumeUrl: '/resume.pdf',
-  contact: { heading: 'Have a problem worth solving?', note: 'I am always happy to talk about a role, a project, or an interesting idea.' },
+  contact: { heading: 'Have a problem worth solving?', note: 'I am always happy to talk about a role, a project, or an interesting idea.', email: 'vishal.patil362000@gmail.com' },
 };

@@ -82,6 +82,16 @@ main { transition:opacity .2s; } .loading-content { opacity:.55; }
 .contact { padding-block:3.5rem; }
 .contact h2 { margin:0 0 .75rem; max-width:680px; font-size:clamp(1.7rem,4vw,2.5rem); line-height:1.25; letter-spacing:-.04em; }
 .contact > p { color:var(--muted); margin:0; max-width:620px; }
+.contact { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); gap:2.5rem; align-items:start; }
+.contact-intro > p { margin:0; color:var(--muted); }
+.contact-form { display:grid; gap:1.1rem; padding:1.5rem; border:1px solid var(--line); border-radius:.9rem; background:var(--card); }
+.contact-fields { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.contact-form .editor-field input,.contact-form .editor-field textarea { background:var(--background); }
+.contact-form button { border:0; justify-self:start; }
+.contact-form button:disabled { opacity:.65; cursor:wait; }
+.contact-privacy { color:var(--muted); font-size:.8125rem; margin:0; }
+.contact-confirmation { padding:.75rem; border-radius:.5rem; background:var(--surface); color:var(--foreground); margin:0; }
+.contact-honeypot { display:none; }
 footer { min-height:90px; display:flex; justify-content:space-between; align-items:center; gap:1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.875rem; } footer a { padding-block:.75rem; }
 /* Preserve the owner editor while making controls easier to read and tap. */
 .editor-panel { width: min(94vw, 520px) !important; max-width: 520px !important; background: var(--background); border-color: var(--line); gap: 0; }.editor-head { padding: 1.4rem 1.4rem 1rem; border-bottom: 1px solid var(--line); }.editor-head [data-slot='sheet-title'] { font-size: 1.25rem; }.editor-body { overflow-y: auto; padding: .75rem 1.4rem 7rem; }.editor-body details { border-bottom: 1px solid var(--line); }.editor-body summary { cursor: pointer; list-style: none; padding: 1.1rem 0; font-weight: 700; }.editor-body summary::after { content: '+'; float: right; color: var(--accent); }.editor-body details[open] summary::after { content: '−'; }.editor-group { display: grid; gap: 1rem; padding: .25rem 0 1.5rem; }.editor-field { display: grid; gap: .35rem; }.editor-field span, .color-field span { color: var(--muted); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }.editor-field input, .editor-field textarea { width: 100%; border: 1px solid var(--line); background: var(--card); color: var(--foreground); padding: .75rem .8rem; border-radius: .65rem; outline: none; resize: vertical; }.editor-field input:focus, .editor-field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 82%); }.editor-card { position: relative; border: 1px solid var(--line); border-radius: .8rem; padding: 1rem; display: grid; gap: .8rem; }.editor-card > button { position: absolute; right: .5rem; top: .5rem; border: 0; background: transparent; color: var(--muted); cursor: pointer; }.editor-card > button svg { width: .9rem; }.add-button { border: 1px dashed var(--line); background: transparent; color: var(--foreground); border-radius: .7rem; padding: .7rem; display: flex; align-items: center; justify-content: center; gap: .4rem; cursor: pointer; }.color-field { display: flex; justify-content: space-between; align-items: center; }.color-field input { width: 2.5rem; height: 2rem; border: 0; background: transparent; }.editor-save { position: absolute; inset: auto 0 0; padding: 1rem 1.4rem; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--background), transparent 5%); backdrop-filter: blur(14px); }.editor-save button { width: 100%; height: 2.8rem; border-radius: 999px; }
@@ -95,6 +105,7 @@ footer { min-height:90px; display:flex; justify-content:space-between; align-ite
 .reveal { animation:rise .45s both; }
 @keyframes rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 @media (max-width:760px) {
+  .contact { grid-template-columns:1fr; gap:1.75rem; }
   .topbar { gap:.5rem; min-height:68px; padding-inline:1.25rem; }
   .nav-links { position:absolute; inset:100% 0 auto; display:none; flex-direction:column; align-items:stretch; gap:0; background:var(--background); border-bottom:1px solid var(--line); padding:.5rem 1.25rem 1rem; }
   .nav-links.open { display:flex; } .nav-links a { padding:.75rem; font-size:1rem; border-radius:.5rem; } .nav-links a:hover { background:var(--surface); }
@@ -102,6 +113,8 @@ footer { min-height:90px; display:flex; justify-content:space-between; align-ite
   .role { grid-template-columns:1fr; gap:1rem; } .learning { align-items:flex-start; flex-direction:column; }
 }
 @media (max-width:520px) {
+  .contact-fields { grid-template-columns:1fr; }
+  .contact-form { padding:1.1rem; }
   .wordmark { font-size:.875rem; } .wordmark > span { display:none; }
   .edit-button { width:44px; padding:0; font-size:0; gap:0; }
   .hero { padding-block:2.5rem; } .hero-profile { gap:1rem; }
