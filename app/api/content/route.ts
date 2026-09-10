@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { portfolioContent } from '@/db/schema';
 import { defaultPortfolio, type PortfolioData } from '@/lib/portfolio';
+import { isPortfolioOwner } from '@/lib/owner-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,12 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  if (!isPortfolioOwner(request)) {
+    return Response.json(
+      { error: 'Only the portfolio owner can edit this site.' },
+      { status: 403 },
+    );
+  }
   const data = (await request.json()) as PortfolioData;
   if (!data?.hero?.name || !Array.isArray(data.projects)) return Response.json({ error: 'Invalid portfolio data.' }, { status: 400 });
   const db = getDb();

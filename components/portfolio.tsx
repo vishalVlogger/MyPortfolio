@@ -90,11 +90,13 @@ export function Portfolio() {
   const [menu, setMenu] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
   const dataRef = useRef(data);
 
   useEffect(() => { dataRef.current = data; }, [data]);
 
   useEffect(() => {
+    if (!canEdit) return;
     const context = document.modelContext;
     if (!context?.registerTool) return;
     const lifecycle = new AbortController();
@@ -121,13 +123,26 @@ export function Portfolio() {
       },
     }, { signal: lifecycle.signal })).catch(() => undefined);
     return () => lifecycle.abort();
-  }, []);
+  }, [canEdit]);
 
   useEffect(() => {
     const theme = localStorage.getItem('portfolio-theme');
     const isDark = theme ? theme === 'dark' : true;
     queueMicrotask(() => setDark(isDark)); document.documentElement.classList.toggle('dark', isDark);
-    void fetch('/api/content').then(async (response) => (await response.json()) as PortfolioData).then((content) => setData(content)).catch(() => undefined).finally(() => setLoading(false));
+    void Promise.all([
+      fetch('/api/content').then(
+        async (response) => (await response.json()) as PortfolioData,
+      ),
+      fetch('/api/session', { cache: 'no-store' }).then(
+        async (response) => (await response.json()) as { canEdit: boolean },
+      ),
+    ])
+      .then(([content, session]) => {
+        setData(content);
+        setCanEdit(session.canEdit);
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
   }, []);
 
   const initials = useMemo(() => data.hero.name.split(/\s+/).filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase(), [data.hero.name]);
@@ -144,7 +159,7 @@ export function Portfolio() {
       <nav className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation">{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenu(false)}>{item}</a>)}</nav>
       <div className="header-actions">
         <button className="icon-button" onClick={toggleTheme} aria-label="Toggle dark mode">{dark ? <Sun /> : <Moon />}</button>
-        <Sheet><SheetTrigger render={<button className="edit-button" aria-label="Edit site content" />}><Pencil /> Edit site</SheetTrigger><Editor data={data} setData={setData} onSave={save} saving={saving} saved={saved} /></Sheet>
+        {canEdit && <Sheet><SheetTrigger render={<button className="edit-button" aria-label="Edit site content" />}><Pencil /> Edit site</SheetTrigger><Editor data={data} setData={setData} onSave={save} saving={saving} saved={saved} /></Sheet>}
         <button className="icon-button menu-button" onClick={() => setMenu(!menu)} aria-label="Toggle menu">{menu ? <X /> : <Menu />}</button>
       </div>
     </header>
