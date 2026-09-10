@@ -1,0 +1,23 @@
+import { eq } from 'drizzle-orm';
+import { getDb } from '@/db';
+import { portfolioContent } from '@/db/schema';
+import { defaultPortfolio, type PortfolioData } from '@/lib/portfolio';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  const db = getDb();
+  const [record] = await db.select().from(portfolioContent).where(eq(portfolioContent.id, 1));
+  if (record) return Response.json(JSON.parse(record.data));
+  await db.insert(portfolioContent).values({ id: 1, data: JSON.stringify(defaultPortfolio), updatedAt: new Date().toISOString() });
+  return Response.json(defaultPortfolio);
+}
+
+export async function PUT(request: Request) {
+  const data = (await request.json()) as PortfolioData;
+  if (!data?.hero?.name || !Array.isArray(data.projects)) return Response.json({ error: 'Invalid portfolio data.' }, { status: 400 });
+  const db = getDb();
+  const now = new Date().toISOString();
+  await db.insert(portfolioContent).values({ id: 1, data: JSON.stringify(data), updatedAt: now }).onConflictDoUpdate({ target: portfolioContent.id, set: { data: JSON.stringify(data), updatedAt: now } });
+  return Response.json({ ok: true });
+}

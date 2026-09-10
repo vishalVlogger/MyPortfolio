@@ -1,0 +1,182 @@
+'use client';
+
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import Image from 'next/image';
+import { ArrowDownRight, ArrowUpRight, BriefcaseBusiness, Check, Code2, Download, GitFork, Mail, Menu, Moon, Pencil, Plus, Save, Sparkles, Sun, Trash2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { defaultPortfolio, type PortfolioData } from '@/lib/portfolio';
+
+const nav = ['About', 'Experience', 'Skills', 'Projects', 'Learning', 'Contact'];
+const accents = ['#c7ff4a', '#70a5ff', '#ff8b6a', '#d6a7ff', '#6de2c5'];
+
+function Field({ label, value, onChange, multiline = false }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean }) {
+  return (
+    <label className="editor-field">
+      <span>{label}</span>
+      {multiline ? <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={4} /> : <input value={value} onChange={(e) => onChange(e.target.value)} />}
+    </label>
+  );
+}
+
+function Editor({ data, setData, onSave, saving, saved }: { data: PortfolioData; setData: (data: PortfolioData) => void; onSave: () => void; saving: boolean; saved: boolean }) {
+  const hero = (key: keyof PortfolioData['hero'], value: string) => setData({ ...data, hero: { ...data.hero, [key]: value } });
+  return (
+    <SheetContent className="editor-panel" side="right">
+      <SheetHeader className="editor-head"><SheetTitle>Portfolio editor</SheetTitle><SheetDescription>Every visible detail lives here. Changes are published when you save.</SheetDescription></SheetHeader>
+      <div className="editor-body">
+        <details open><summary>Hero & profile</summary><div className="editor-group">
+          <Field label="Name" value={data.hero.name} onChange={(v) => hero('name', v)} />
+          <Field label="Role" value={data.hero.role} onChange={(v) => hero('role', v)} />
+          <Field label="Tagline" value={data.hero.tagline} onChange={(v) => hero('tagline', v)} multiline />
+          <Field label="Bio" value={data.hero.bio} onChange={(v) => hero('bio', v)} multiline />
+          <Field label="Location" value={data.hero.location} onChange={(v) => hero('location', v)} />
+          <Field label="Availability" value={data.hero.availability} onChange={(v) => hero('availability', v)} />
+          <Field label="Photo URL" value={data.hero.photoUrl} onChange={(v) => hero('photoUrl', v)} />
+          <Field label="GitHub URL" value={data.hero.github} onChange={(v) => hero('github', v)} />
+          <Field label="LinkedIn URL" value={data.hero.linkedin} onChange={(v) => hero('linkedin', v)} />
+          <Field label="Email" value={data.hero.email} onChange={(v) => hero('email', v)} />
+        </div></details>
+
+        <details><summary>Experience</summary><div className="editor-group">
+          {data.experience.map((item, i) => <div className="editor-card" key={i}>
+            <button aria-label="Remove role" onClick={() => setData({ ...data, experience: data.experience.filter((_, x) => x !== i) })}><Trash2 /></button>
+            <Field label="Company" value={item.company} onChange={(v) => { const a = [...data.experience]; a[i] = { ...item, company: v }; setData({ ...data, experience: a }); }} />
+            <Field label="Title" value={item.title} onChange={(v) => { const a = [...data.experience]; a[i] = { ...item, title: v }; setData({ ...data, experience: a }); }} />
+            <Field label="Dates" value={item.dates} onChange={(v) => { const a = [...data.experience]; a[i] = { ...item, dates: v }; setData({ ...data, experience: a }); }} />
+            <Field label="Impact (one per line)" value={item.bullets.join('\n')} multiline onChange={(v) => { const a = [...data.experience]; a[i] = { ...item, bullets: v.split('\n') }; setData({ ...data, experience: a }); }} />
+          </div>)}
+          <button className="add-button" onClick={() => setData({ ...data, experience: [...data.experience, { company: 'Company', title: 'Role', dates: 'Year — Year', bullets: ['Describe your impact.'] }] })}><Plus /> Add role</button>
+        </div></details>
+
+        <details><summary>Skills</summary><div className="editor-group">
+          {data.skills.map((group, i) => <div className="editor-card" key={i}>
+            <button aria-label="Remove skill group" onClick={() => setData({ ...data, skills: data.skills.filter((_, x) => x !== i) })}><Trash2 /></button>
+            <Field label="Category" value={group.category} onChange={(v) => { const a = [...data.skills]; a[i] = { ...group, category: v }; setData({ ...data, skills: a }); }} />
+            <Field label="Skills (comma separated)" value={group.items.join(', ')} onChange={(v) => { const a = [...data.skills]; a[i] = { ...group, items: v.split(',').map(s => s.trim()).filter(Boolean) }; setData({ ...data, skills: a }); }} />
+          </div>)}
+          <button className="add-button" onClick={() => setData({ ...data, skills: [...data.skills, { category: 'Category', items: ['Skill'] }] })}><Plus /> Add group</button>
+        </div></details>
+
+        <details><summary>Projects</summary><div className="editor-group">
+          {data.projects.map((project, i) => <div className="editor-card" key={i}>
+            <button aria-label="Remove project" onClick={() => setData({ ...data, projects: data.projects.filter((_, x) => x !== i) })}><Trash2 /></button>
+            <Field label="Title" value={project.title} onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, title: v }; setData({ ...data, projects: a }); }} />
+            <Field label="Description" value={project.description} multiline onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, description: v }; setData({ ...data, projects: a }); }} />
+            <Field label="Tech stack (comma separated)" value={project.stack.join(', ')} onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, stack: v.split(',').map(s => s.trim()).filter(Boolean) }; setData({ ...data, projects: a }); }} />
+            <Field label="Live URL" value={project.liveUrl} onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, liveUrl: v }; setData({ ...data, projects: a }); }} />
+            <Field label="GitHub URL" value={project.githubUrl} onChange={(v) => { const a = [...data.projects]; a[i] = { ...project, githubUrl: v }; setData({ ...data, projects: a }); }} />
+            <label className="color-field"><span>Accent</span><input type="color" value={project.accent} onChange={(e) => { const a = [...data.projects]; a[i] = { ...project, accent: e.target.value }; setData({ ...data, projects: a }); }} /></label>
+          </div>)}
+          <button className="add-button" onClick={() => setData({ ...data, projects: [...data.projects, { title: 'New project', description: 'What it does and why it matters.', stack: ['React'], liveUrl: 'https://example.com', githubUrl: 'https://github.com/', accent: accents[data.projects.length % accents.length] }] })}><Plus /> Add project</button>
+        </div></details>
+
+        <details><summary>Learning, resume & contact</summary><div className="editor-group">
+          <Field label="Currently learning (comma separated)" value={data.learning.join(', ')} onChange={(v) => setData({ ...data, learning: v.split(',').map(s => s.trim()).filter(Boolean) })} />
+          <Field label="Resume URL" value={data.resumeUrl} onChange={(v) => setData({ ...data, resumeUrl: v })} />
+          <Field label="Contact heading" value={data.contact.heading} onChange={(v) => setData({ ...data, contact: { ...data.contact, heading: v } })} />
+          <Field label="Contact note" value={data.contact.note} multiline onChange={(v) => setData({ ...data, contact: { ...data.contact, note: v } })} />
+        </div></details>
+      </div>
+      <div className="editor-save"><Button onClick={onSave} disabled={saving}>{saved ? <Check /> : <Save />}{saving ? 'Saving…' : saved ? 'Saved' : 'Save & publish'}</Button></div>
+    </SheetContent>
+  );
+}
+
+export function Portfolio() {
+  const [data, setData] = useState<PortfolioData>(defaultPortfolio);
+  const [loading, setLoading] = useState(true);
+  const [dark, setDark] = useState(true);
+  const [menu, setMenu] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const dataRef = useRef(data);
+
+  useEffect(() => { dataRef.current = data; }, [data]);
+
+  useEffect(() => {
+    const context = document.modelContext;
+    if (!context?.registerTool) return;
+    const lifecycle = new AbortController();
+    const profileFields = ['name', 'role', 'tagline', 'bio', 'location', 'availability', 'photoUrl', 'github', 'linkedin', 'email'] as const;
+    void Promise.resolve(context.registerTool({
+      name: 'update_portfolio_profile',
+      title: 'Update portfolio profile',
+      description: 'Update one or more hero/profile fields and publish them to the visible portfolio.',
+      inputSchema: {
+        type: 'object',
+        properties: Object.fromEntries(profileFields.map((key) => [key, { type: 'string' }])),
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, untrustedContentHint: false },
+      async execute(input: unknown) {
+        if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Provide at least one valid profile field.');
+        const update = Object.fromEntries(Object.entries(input).filter(([key, value]) => profileFields.includes(key as typeof profileFields[number]) && typeof value === 'string'));
+        if (!Object.keys(update).length) throw new Error('Provide at least one valid profile field.');
+        const next = { ...dataRef.current, hero: { ...dataRef.current.hero, ...update } };
+        const response = await fetch('/api/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) });
+        if (!response.ok) throw new Error('The profile could not be saved.');
+        dataRef.current = next; setData(next);
+        return { updated: Object.keys(update), name: next.hero.name };
+      },
+    }, { signal: lifecycle.signal })).catch(() => undefined);
+    return () => lifecycle.abort();
+  }, []);
+
+  useEffect(() => {
+    const theme = localStorage.getItem('portfolio-theme');
+    const isDark = theme ? theme === 'dark' : true;
+    queueMicrotask(() => setDark(isDark)); document.documentElement.classList.toggle('dark', isDark);
+    void fetch('/api/content').then(async (response) => (await response.json()) as PortfolioData).then((content) => setData(content)).catch(() => undefined).finally(() => setLoading(false));
+  }, []);
+
+  const initials = useMemo(() => data.hero.name.split(/\s+/).filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase(), [data.hero.name]);
+  const toggleTheme = () => { const next = !dark; setDark(next); document.documentElement.classList.toggle('dark', next); localStorage.setItem('portfolio-theme', next ? 'dark' : 'light'); };
+  const save = async () => {
+    setSaving(true); setSaved(false);
+    const response = await fetch('/api/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    setSaving(false); if (response.ok) { setSaved(true); setTimeout(() => setSaved(false), 1800); }
+  };
+
+  return <div className="site-shell">
+    <header className="topbar">
+      <a className="wordmark" href="#about"><span>{initials || 'YN'}</span>{data.hero.name}</a>
+      <nav className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation">{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenu(false)}>{item}</a>)}</nav>
+      <div className="header-actions">
+        <button className="icon-button" onClick={toggleTheme} aria-label="Toggle dark mode">{dark ? <Sun /> : <Moon />}</button>
+        <Sheet><SheetTrigger render={<button className="edit-button" aria-label="Edit site content" />}><Pencil /> Edit site</SheetTrigger><Editor data={data} setData={setData} onSave={save} saving={saving} saved={saved} /></Sheet>
+        <button className="icon-button menu-button" onClick={() => setMenu(!menu)} aria-label="Toggle menu">{menu ? <X /> : <Menu />}</button>
+      </div>
+    </header>
+
+    <main className={loading ? 'loading-content' : ''}>
+      <section className="hero" id="about">
+        <div className="hero-kicker reveal"><span className="status-dot" /> {data.hero.availability}</div>
+        <h1 className="reveal">{data.hero.tagline}</h1>
+        <div className="hero-lower reveal">
+          <div className="identity"><div className="portrait" aria-label={`Profile photo of ${data.hero.name}`}>{data.hero.photoUrl ? <Image src={data.hero.photoUrl} alt={data.hero.name} fill sizes="68px" unoptimized priority /> : <span>{initials || 'YN'}</span>}</div><div><strong>{data.hero.name}</strong><span>{data.hero.role}</span></div></div>
+          <div className="intro-copy"><p>{data.hero.bio}</p><span>{data.hero.location}</span></div>
+          <div className="socials"><a href={data.hero.github} target="_blank" rel="noreferrer" aria-label="GitHub"><GitFork /></a><a href={data.hero.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn"><BriefcaseBusiness /></a><a href={`mailto:${data.hero.email}`} aria-label="Email"><Mail /></a></div>
+        </div>
+        <a className="scroll-cue" href="#experience">Scroll to explore <ArrowDownRight /></a>
+      </section>
+
+      <section className="section" id="experience"><div className="section-heading"><span>01</span><h2>Experience</h2><p>Where I’ve made an impact.</p></div><div className="timeline">
+        {data.experience.map((item, i) => <article className="role" key={`${item.company}-${i}`}><div className="role-number">{String(i + 1).padStart(2, '0')}</div><div><span className="role-dates">{item.dates}</span><h3>{item.title}</h3><h4>{item.company}</h4></div><ul>{item.bullets.filter(Boolean).map((bullet, x) => <li key={x}>{bullet}</li>)}</ul></article>)}
+      </div></section>
+
+      <section className="section skills-section" id="skills"><div className="section-heading"><span>02</span><h2>Toolkit</h2><p>What I use to make ideas real.</p></div><div className="skill-grid">
+        {data.skills.map((group, i) => <article key={`${group.category}-${i}`}><span>{String(i + 1).padStart(2, '0')}</span><h3>{group.category}</h3><div>{group.items.map(item => <em key={item}>{item}</em>)}</div></article>)}
+      </div></section>
+
+      <section className="section" id="projects"><div className="section-heading"><span>03</span><h2>Selected work</h2><p>A few things I’m proud to have built.</p></div><div className="project-grid">
+        {data.projects.map((project, i) => <article className="project-card" key={`${project.title}-${i}`}><div className="project-visual" style={{ '--accent': project.accent } as CSSProperties}><span className="project-index">0{i + 1}</span><Code2 /><strong>{project.title.slice(0, 1)}</strong></div><div className="project-copy"><div className="project-title"><h3>{project.title}</h3><div><a href={project.githubUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} GitHub`}><GitFork /></a><a href={project.liveUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} live site`}><ArrowUpRight /></a></div></div><p>{project.description}</p><div className="stack">{project.stack.map(tech => <span key={tech}>{tech}</span>)}</div></div></article>)}
+      </div></section>
+
+      <section className="learning section" id="learning"><div><span className="eyebrow"><Sparkles /> In progress</span><h2>Always<br />learning.</h2></div><div className="learning-list">{data.learning.map((item, i) => <div key={item}><span>{String(i + 1).padStart(2, '0')}</span><strong>{item}</strong><ArrowUpRight /></div>)}</div></section>
+
+      <section className="contact section" id="contact"><span className="eyebrow">Let’s build something good</span><h2>{data.contact.heading}</h2><p>{data.contact.note}</p><div className="contact-actions"><a className="primary-link" href={`mailto:${data.hero.email}`}>Start a conversation <ArrowUpRight /></a><a className="secondary-link" href={data.resumeUrl} target="_blank" rel="noreferrer">View résumé <Download /></a></div></section>
+    </main>
+    <footer><span>© {new Date().getFullYear()} {data.hero.name}</span><span>Designed & built with care.</span><a href="#about">Back to top ↑</a></footer>
+  </div>;
+}
