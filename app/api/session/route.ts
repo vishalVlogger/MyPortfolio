@@ -1,10 +1,10 @@
-import { isPortfolioOwner } from '@/lib/owner-auth';
+import { canPublishPortfolio } from '@/lib/owner-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   return Response.json(
-    { canEdit: isPortfolioOwner(request) },
+    { canEdit: await canPublishPortfolio(request) },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

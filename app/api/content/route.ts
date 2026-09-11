@@ -2,20 +2,20 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { portfolioContent } from '@/db/schema';
 import { defaultPortfolio, type PortfolioData } from '@/lib/portfolio';
-import { isPortfolioOwner } from '@/lib/owner-auth';
+import { canPublishPortfolio } from '@/lib/owner-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const db = getDb();
   const [record] = await db.select().from(portfolioContent).where(eq(portfolioContent.id, 1));
-  if (record) return Response.json(JSON.parse(record.data));
+  if (record) return Response.json(JSON.parse(record.data), { headers: { 'Cache-Control': 'no-store' } });
   await db.insert(portfolioContent).values({ id: 1, data: JSON.stringify(defaultPortfolio), updatedAt: new Date().toISOString() });
-  return Response.json(defaultPortfolio);
+  return Response.json(defaultPortfolio, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function PUT(request: Request) {
-  if (!isPortfolioOwner(request)) {
+  if (!await canPublishPortfolio(request)) {
     return Response.json(
       { error: 'Only the portfolio owner can edit this site.' },
       { status: 403 },

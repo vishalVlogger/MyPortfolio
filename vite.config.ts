@@ -48,11 +48,13 @@ export default defineConfig(async ({ mode }) => {
 
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    server: {
+      host: '127.0.0.1',
+      strictPort: true,
+      ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),
+    },
     plugins: [
-      portfolioSync(localEnv.PORTFOLIO_REMOTE_ORIGIN),
+      portfolioSync(localEnv.PORTFOLIO_REMOTE_ORIGIN, localEnv.PORTFOLIO_SYNC_KEY),
       vinext(),
       sites(),
       cloudflare({

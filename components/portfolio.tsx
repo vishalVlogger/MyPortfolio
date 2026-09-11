@@ -38,7 +38,7 @@ function ListField({ label, items, onChange }: { label: string; items: string[];
   </label>;
 }
 
-function Editor({ data, setData, onSave, saving, saved }: { data: PortfolioData; setData: (data: PortfolioData) => void; onSave: () => void; saving: boolean; saved: boolean }) {
+function Editor({ data, setData, onSave, saving, saved, error }: { data: PortfolioData; setData: (data: PortfolioData) => void; onSave: () => void; saving: boolean; saved: boolean; error: string }) {
   const hero = (key: keyof PortfolioData['hero'], value: string) => setData({ ...data, hero: { ...data.hero, [key]: value } });
   return (
     <SheetContent className="editor-panel" side="right">
@@ -98,7 +98,7 @@ function Editor({ data, setData, onSave, saving, saved }: { data: PortfolioData;
           <Field label="Contact note" value={data.contact.note} multiline onChange={(v) => setData({ ...data, contact: { ...data.contact, note: v } })} />
         </div></details>
       </div>
-      <div className="editor-save"><Button onClick={onSave} disabled={saving}>{saved ? <Check /> : <Save />}{saving ? 'Saving…' : saved ? 'Saved' : 'Save & publish'}</Button></div>
+      <div className="editor-save">{error && <p role="alert">{error}</p>}<Button onClick={onSave} disabled={saving}>{saved ? <Check /> : <Save />}{saving ? 'Saving…' : saved ? 'Saved' : 'Save & publish'}</Button></div>
     </SheetContent>
   );
 }
@@ -112,6 +112,9 @@ export function Portfolio() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [editorNotice, setEditorNotice] = useState('');
+  const csrfToken = useRef('');
   const [loadError, setLoadError] = useState('');
   const [hasContent, setHasContent] = useState(false);
   const lastLoaded = useRef('');
@@ -140,8 +143,9 @@ export function Portfolio() {
         const update = Object.fromEntries(Object.entries(input).filter(([key, value]) => profileFields.includes(key as typeof profileFields[number]) && typeof value === 'string'));
         if (!Object.keys(update).length) throw new Error('Provide at least one valid profile field.');
         const next = { ...dataRef.current, hero: { ...dataRef.current.hero, ...update } };
-        const response = await fetch('/api/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) });
+        const response = await fetch('/api/content', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(csrfToken.current ? { 'x-portfolio-csrf': csrfToken.current } : {}) }, body: JSON.stringify(next) });
         if (!response.ok) throw new Error('The profile could not be saved.');
+        lastLoaded.current = JSON.stringify(next);
         dataRef.current = next; setData(next);
         return { updated: Object.keys(update), name: next.hero.name };
       },
@@ -166,7 +170,7 @@ export function Portfolio() {
         ]);
         if (!contentResponse.ok || !sessionResponse.ok) throw new Error('Connection failed');
         const content = await contentResponse.json() as PortfolioData;
-        const session = await sessionResponse.json() as { canEdit: boolean };
+        const session = await sessionResponse.json() as { canEdit: boolean; csrfToken?: string; editorNotice?: string };
         if (!content?.hero?.name || !Array.isArray(content.projects)) throw new Error('Invalid content');
         if (!active) return;
         // A user may have started editing while the request was in flight.
@@ -176,6 +180,8 @@ export function Portfolio() {
         dataRef.current = next;
         setData(next);
         setCanEdit(session.canEdit);
+        csrfToken.current = session.csrfToken ?? '';
+        setEditorNotice(session.editorNotice ?? '');
         setHasContent(true);
         setLoadError('');
       } catch {
@@ -211,9 +217,22 @@ export function Portfolio() {
   const initials = useMemo(() => data.hero.name.split(/\s+/).filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase(), [data.hero.name]);
   const toggleTheme = () => { const next = !dark; setDark(next); document.documentElement.classList.toggle('dark', next); localStorage.setItem('portfolio-theme', next ? 'dark' : 'light'); };
   const save = async () => {
-    setSaving(true); setSaved(false);
-    const response = await fetch('/api/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    setSaving(false); if (response.ok) { setSaved(true); setTimeout(() => setSaved(false), 1800); }
+    setSaving(true); setSaved(false); setSaveError('');
+    try {
+      // Refresh the local CSRF token without replacing the user's unsaved draft.
+      const sessionResponse = await fetch('/api/session', { cache: 'no-store' });
+      if (!sessionResponse.ok) throw new Error('Cannot verify editor access. Please try again.');
+      const session = await sessionResponse.json() as { canEdit: boolean; csrfToken?: string };
+      if (!session.canEdit) throw new Error('Editing is locked. Check your owner connection; your draft has been kept.');
+      csrfToken.current = session.csrfToken ?? '';
+      const response = await fetch('/api/content', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(csrfToken.current ? { 'x-portfolio-csrf': csrfToken.current } : {}) }, body: JSON.stringify(data) });
+      const result = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Your changes could not be saved.');
+      lastLoaded.current = JSON.stringify(data);
+      setSaved(true); setTimeout(() => setSaved(false), 1800);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Unable to save. Your draft has been kept.');
+    } finally { setSaving(false); }
   };
 
   if (!hasContent) return <main className="section" aria-busy={loading}>
@@ -228,12 +247,13 @@ export function Portfolio() {
       <nav id="main-navigation" className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation">{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} aria-current={activeSection === item.toLowerCase() ? 'location' : undefined} onKeyDown={(event) => { if (event.key === 'Escape') setMenu(false); }} onClick={() => setMenu(false)}>{item}</a>)}</nav>
       <div className="header-actions">
         <button className="icon-button" onClick={toggleTheme} aria-label="Toggle dark mode">{dark ? <Sun /> : <Moon />}</button>
-        {canEdit && <Sheet><SheetTrigger render={<button className="edit-button" aria-label="Edit site content" />}><Pencil /> Edit site</SheetTrigger><Editor data={data} setData={setData} onSave={save} saving={saving} saved={saved} /></Sheet>}
+        {canEdit && <Sheet><SheetTrigger render={<button className="edit-button" aria-label="Edit site content" />}><Pencil /> Edit site</SheetTrigger><Editor data={data} setData={setData} onSave={save} saving={saving} saved={saved} error={saveError} /></Sheet>}
         <button className="icon-button menu-button" onClick={() => setMenu(!menu)} aria-label="Toggle menu" aria-expanded={menu} aria-controls="main-navigation">{menu ? <X /> : <Menu />}</button>
       </div>
     </header>
 
     <main id="main-content" tabIndex={-1} className={loading ? 'loading-content' : ''}>
+      {editorNotice && <p className="section"><output>{editorNotice}</output></p>}
       {loadError && <p role="alert">{loadError} <button onClick={() => window.location.reload()}>Retry</button></p>}
       <section className="hero" id="about">
         <div className="hero-kicker reveal"><span className="status-dot" /> {data.hero.availability}</div>

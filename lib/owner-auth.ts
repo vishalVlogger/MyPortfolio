@@ -1,4 +1,10 @@
 import { env } from 'cloudflare:workers';
+import { verifySyncToken } from './sync-token';
+
+/** Local publishing uses its own revocable secret, not spoofed Sites identity. */
+export async function canPublishPortfolio(request: Request) {
+  return isPortfolioOwner(request) || await verifySyncToken(request, env.PORTFOLIO_SYNC_KEY);
+}
 
 /** Authorize writes using the signed-in OpenAI identity forwarded by Sites. */
 export function isPortfolioOwner(request: Request) {
