@@ -112,6 +112,9 @@ export function Portfolio() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [hasContent, setHasContent] = useState(false);
+  const lastLoaded = useRef('');
   const dataRef = useRef(data);
 
   useEffect(() => { dataRef.current = data; }, [data]);
@@ -150,20 +153,41 @@ export function Portfolio() {
     const theme = localStorage.getItem('portfolio-theme');
     const isDark = theme ? theme === 'dark' : true;
     queueMicrotask(() => setDark(isDark)); document.documentElement.classList.toggle('dark', isDark);
-    void Promise.all([
-      fetch('/api/content').then(
-        async (response) => (await response.json()) as PortfolioData,
-      ),
-      fetch('/api/session', { cache: 'no-store' }).then(
-        async (response) => (await response.json()) as { canEdit: boolean },
-      ),
-    ])
-      .then(([content, session]) => {
-        setData({ ...content, contact: { ...defaultPortfolio.contact, ...content.contact } });
+    let active = true;
+    let pending = false;
+    const refresh = async () => {
+      // Returning from the hosted editor refreshes the view without losing local drafts.
+      if (pending || (lastLoaded.current && JSON.stringify(dataRef.current) !== lastLoaded.current)) return;
+      pending = true;
+      try {
+        const [contentResponse, sessionResponse] = await Promise.all([
+          fetch('/api/content', { cache: 'no-store' }),
+          fetch('/api/session', { cache: 'no-store' }),
+        ]);
+        if (!contentResponse.ok || !sessionResponse.ok) throw new Error('Connection failed');
+        const content = await contentResponse.json() as PortfolioData;
+        const session = await sessionResponse.json() as { canEdit: boolean };
+        if (!content?.hero?.name || !Array.isArray(content.projects)) throw new Error('Invalid content');
+        if (!active) return;
+        // A user may have started editing while the request was in flight.
+        if (lastLoaded.current && JSON.stringify(dataRef.current) !== lastLoaded.current) return;
+        const next = { ...content, contact: { ...defaultPortfolio.contact, ...content.contact } };
+        lastLoaded.current = JSON.stringify(next);
+        dataRef.current = next;
+        setData(next);
         setCanEdit(session.canEdit);
-      })
-      .catch(() => undefined)
-      .finally(() => setLoading(false));
+        setHasContent(true);
+        setLoadError('');
+      } catch {
+        if (active) setLoadError('Could not load the latest portfolio. Check your connection, then retry.');
+      } finally {
+        pending = false;
+        if (active) setLoading(false);
+      }
+    };
+    void refresh();
+    window.addEventListener('focus', refresh);
+    return () => { active = false; window.removeEventListener('focus', refresh); };
   }, []);
 
   // Keep navigation in sync with scrolling, including the sections between links.
@@ -192,6 +216,11 @@ export function Portfolio() {
     setSaving(false); if (response.ok) { setSaved(true); setTimeout(() => setSaved(false), 1800); }
   };
 
+  if (!hasContent) return <main className="section" aria-busy={loading}>
+    <output>{loadError || 'Loading portfolio…'}</output>
+    {loadError && <Button onClick={() => window.location.reload()}>Retry</Button>}
+  </main>;
+
   return <div className="site-shell">
     <a className="skip-link" href="#main-content">Skip to content</a>
     <header className="topbar">
@@ -205,6 +234,7 @@ export function Portfolio() {
     </header>
 
     <main id="main-content" tabIndex={-1} className={loading ? 'loading-content' : ''}>
+      {loadError && <p role="alert">{loadError} <button onClick={() => window.location.reload()}>Retry</button></p>}
       <section className="hero" id="about">
         <div className="hero-kicker reveal"><span className="status-dot" /> {data.hero.availability}</div>
         <div className="hero-profile reveal">
