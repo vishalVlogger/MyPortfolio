@@ -108,6 +108,7 @@ export function Portfolio() {
   const [loading, setLoading] = useState(true);
   const [dark, setDark] = useState(true);
   const [menu, setMenu] = useState(false);
+  const [activeSection, setActiveSection] = useState('about');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
@@ -165,6 +166,24 @@ export function Portfolio() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Keep navigation in sync with scrolling, including the sections between links.
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      const current = nav.map(label => label.toLowerCase())
+        .filter(id => (document.getElementById(id)?.getBoundingClientRect().top ?? Infinity) <= 150)
+        .at(-1) ?? 'about';
+      setActiveSection(current);
+      frame = 0;
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(frame); };
+  }, []);
+
+  useEffect(() => { if (!loading) document.title = `${data.hero.name} — ${data.hero.role}`; }, [data.hero.name, data.hero.role, loading]);
+
   const initials = useMemo(() => data.hero.name.split(/\s+/).filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase(), [data.hero.name]);
   const toggleTheme = () => { const next = !dark; setDark(next); document.documentElement.classList.toggle('dark', next); localStorage.setItem('portfolio-theme', next ? 'dark' : 'light'); };
   const save = async () => {
@@ -174,9 +193,10 @@ export function Portfolio() {
   };
 
   return <div className="site-shell">
+    <a className="skip-link" href="#main-content">Skip to content</a>
     <header className="topbar">
       <a className="wordmark" href="#about"><span>{initials || 'YN'}</span>{data.hero.name}</a>
-      <nav id="main-navigation" className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation">{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} onKeyDown={(event) => { if (event.key === 'Escape') setMenu(false); }} onClick={() => setMenu(false)}>{item}</a>)}</nav>
+      <nav id="main-navigation" className={menu ? 'nav-links open' : 'nav-links'} aria-label="Main navigation">{nav.map(item => <a key={item} href={`#${item.toLowerCase()}`} aria-current={activeSection === item.toLowerCase() ? 'location' : undefined} onKeyDown={(event) => { if (event.key === 'Escape') setMenu(false); }} onClick={() => setMenu(false)}>{item}</a>)}</nav>
       <div className="header-actions">
         <button className="icon-button" onClick={toggleTheme} aria-label="Toggle dark mode">{dark ? <Sun /> : <Moon />}</button>
         {canEdit && <Sheet><SheetTrigger render={<button className="edit-button" aria-label="Edit site content" />}><Pencil /> Edit site</SheetTrigger><Editor data={data} setData={setData} onSave={save} saving={saving} saved={saved} /></Sheet>}
@@ -184,7 +204,7 @@ export function Portfolio() {
       </div>
     </header>
 
-    <main className={loading ? 'loading-content' : ''}>
+    <main id="main-content" tabIndex={-1} className={loading ? 'loading-content' : ''}>
       <section className="hero" id="about">
         <div className="hero-kicker reveal"><span className="status-dot" /> {data.hero.availability}</div>
         <div className="hero-profile reveal">
@@ -194,7 +214,7 @@ export function Portfolio() {
         <p className="hero-tagline reveal">{data.hero.tagline}</p>
         <div className="hero-lower reveal">
           <div className="intro-copy"><p>{data.hero.bio}</p><span>{data.hero.location}</span></div>
-          <div className="socials"><a href={data.hero.github} target="_blank" rel="noreferrer" aria-label="GitHub"><GitFork /></a><a href={data.hero.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn"><BriefcaseBusiness /></a><a href={`mailto:${data.hero.email}`} aria-label="Email"><Mail /></a></div>
+          <div className="socials"><a href={data.hero.github} target="_blank" rel="noreferrer" aria-label="GitHub"><GitFork /><span>GitHub</span></a><a href={data.hero.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn"><BriefcaseBusiness /><span>LinkedIn</span></a><a href={`mailto:${data.hero.email}`} aria-label="Email"><Mail /><span>Email</span></a></div>
         </div>
         <div className="hero-actions"><a className="primary-link" href="#projects">View projects <ArrowUpRight /></a><a className="secondary-link" href={data.resumeUrl} target="_blank" rel="noreferrer">View résumé <Download /></a></div>
       </section>
@@ -208,7 +228,15 @@ export function Portfolio() {
       </div></section>
 
       <section className="section" id="projects"><div className="section-heading"><h2>Selected projects</h2></div><div className="project-grid">
-        {data.projects.map((project, i) => <article className="project-card" key={`${project.title}-${i}`}><div className="project-visual" aria-hidden="true" style={{ '--project-accent': project.accent } as CSSProperties}><strong>{project.title.slice(0, 1)}</strong></div><div className="project-copy"><div className="project-title"><h3>{project.title}</h3><div><a href={project.githubUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} GitHub`}><GitFork /></a><a href={project.liveUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} live site`}><ArrowUpRight /></a></div></div><p>{project.description}</p><div className="stack">{project.stack.map(tech => <span key={tech}>{tech}</span>)}</div></div></article>)}
+        {data.projects.map((project, i) => <article className="project-card" key={`${project.title}-${i}`} style={{ '--project-accent': project.accent } as CSSProperties}>
+          <div className="project-header"><div className="project-visual" aria-hidden="true"><strong>{project.title.slice(0, 1)}</strong></div><h3>{project.title}</h3></div>
+          <p className="project-description">{project.description}</p>
+          <div className="stack">{project.stack.map(tech => <span key={tech}>{tech}</span>)}</div>
+          <div className="project-links">
+            <a href={project.liveUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} live site`}>Live project <ArrowUpRight /></a>
+            <a href={project.githubUrl} target="_blank" rel="noreferrer" aria-label={`${project.title} GitHub`}>Code <GitFork /></a>
+          </div>
+        </article>)}
       </div></section>
 
       <section className="learning section" id="learning"><h2>Currently learning</h2><div className="learning-list">{data.learning.map(item => <span key={item}>{item}</span>)}</div></section>
