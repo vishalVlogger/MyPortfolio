@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Your Name — Software Developer',
-  description: 'Personal portfolio, selected work, experience, and contact details.',
+  title: 'Vishal Patil — Software Developer',
+  description: 'Personal portfolio, Salesforce & ASP.NET projects, experience, and contact details.',
 };
 
 export default function RootLayout({
