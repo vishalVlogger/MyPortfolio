@@ -193,14 +193,15 @@ p {
 
 /* Header & navigation */
 .topbar {
-  min-height: 72px;
+  min-height: 70px;
   position: sticky;
   top: 0;
   z-index: 50;
   display: flex;
   align-items: center;
-  gap: 2rem;
-  padding: 0.75rem max(1.25rem, calc((100% - 1040px) / 2));
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 0.65rem max(1.25rem, calc((100% - 1000px) / 2));
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--background) 85%, transparent);
   backdrop-filter: blur(16px);
@@ -216,8 +217,8 @@ p {
   gap: 0.65rem;
   font-weight: 700;
   letter-spacing: -0.025em;
-  margin-right: auto;
   min-width: 0;
+  flex-shrink: 0;
   overflow-wrap: anywhere;
   transition: opacity 0.2s ease;
 }
@@ -248,14 +249,16 @@ p {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.2rem;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+  margin: 0 auto;
 }
 
 .nav-links a {
-  padding: 0.5rem 0.85rem;
+  padding: 0.42rem 0.75rem;
   border-radius: 999px;
+  white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: 500;
 }
@@ -276,6 +279,7 @@ p {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .icon-button,
@@ -593,6 +597,7 @@ main {
 .contact-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.85rem;
   margin-top: 1.75rem;
 }
@@ -600,22 +605,36 @@ main {
 .primary-link,
 .secondary-link {
   min-height: 48px;
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1.35rem;
   border-radius: 0.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.55rem;
   font-size: 0.9rem;
   font-weight: 600;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
+  white-space: nowrap;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
+.primary-link svg,
+.secondary-link svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
 .primary-link {
   background: var(--accent);
   color: var(--accent-ink);
+  border: 1px solid transparent;
   box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
@@ -1120,6 +1139,381 @@ main {
   box-shadow: 0 4px 20px #00000004;
 }
 
+/* Cursor Spotlight Effect */
+.spotlight-card {
+  position: relative;
+  background-color: var(--card);
+  overflow: hidden;
+}
+
+.spotlight-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    400px circle at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    color-mix(in srgb, var(--project-accent, var(--accent)) 14%, transparent),
+    transparent 80%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.spotlight-card:hover::after {
+  opacity: 1;
+}
+
+/* Project Screenshot Mockup Frame */
+.project-mockup {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.15);
+}
+
+.project-mockup img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-card:hover .project-mockup img {
+  transform: scale(1.03);
+}
+
+.project-mockup-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  z-index: 2;
+}
+
+.mockup-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--foreground) 25%, transparent);
+}
+
+/* Credentials & Education Section */
+.credentials-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.credential-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--card);
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.credential-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -8px
+    color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.credential-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--accent) 15%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.credential-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.credential-content h3 {
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin: 0;
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.credential-issuer {
+  font-size: 0.84rem;
+  color: var(--accent);
+  font-weight: 550;
+  margin: 0.2rem 0;
+}
+
+.credential-date {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.credential-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 550;
+  margin-top: 0.6rem;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.credential-link:hover {
+  color: var(--accent);
+}
+
+.credential-link svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Education List */
+.education-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.education-card {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--card);
+  transition: all 0.25s ease;
+}
+
+.education-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -8px
+    color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.education-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--foreground);
+}
+
+.education-degree {
+  font-size: 0.92rem;
+  font-weight: 550;
+  color: var(--accent);
+  margin: 0.25rem 0 0.5rem;
+}
+
+.education-dates {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.65rem;
+}
+
+.education-details {
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Recruiter Quick Scan Button */
+.recruiter-btn {
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 650;
+  border-radius: 9999px;
+  background: linear-gradient(
+    135deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 70%, #8b5cf6)
+  );
+  color: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, white);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.recruiter-btn:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.recruiter-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* Quick Scan Modal Body */
+.quickscan-dialog {
+  max-width: 680px !important;
+  width: min(680px, calc(100vw - 2rem)) !important;
+  max-height: 85vh;
+  overflow-y: auto;
+  border-radius: 1.25rem !important;
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4) !important;
+}
+
+.quickscan-hero {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.quickscan-portrait {
+  width: 56px;
+  height: 56px;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.quickscan-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.quickscan-meta h2 {
+  font-size: 1.3rem;
+  font-weight: 750;
+  margin: 0;
+  color: var(--foreground);
+}
+
+.quickscan-meta p {
+  font-size: 0.9rem;
+  color: var(--accent);
+  font-weight: 550;
+  margin: 0.15rem 0 0;
+}
+
+.quickscan-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.quickscan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 550;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--foreground);
+}
+
+.quickscan-badge.active-status {
+  background: color-mix(in srgb, #10b981 12%, var(--surface));
+  border-color: color-mix(in srgb, #10b981 40%, var(--line));
+  color: #10b981;
+}
+
+.quickscan-section {
+  margin-top: 1.25rem;
+}
+
+.quickscan-section h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 0 0 0.65rem;
+}
+
+.quickscan-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.quickscan-pill {
+  font-size: 0.8rem;
+  font-weight: 550;
+  padding: 0.22rem 0.65rem;
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--foreground);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line));
+}
+
+.quickscan-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.resume-preview-frame {
+  width: 100%;
+  height: 520px;
+  border-radius: 0.75rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.resume-preview-frame iframe,
+.resume-preview-frame embed {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 .learning-title-box {
   display: flex;
   align-items: center;
@@ -1609,6 +2003,43 @@ footer a:hover {
 }
 
 /* Responsive adjustments */
+@media (max-width: 860px) {
+  .topbar {
+    gap: 0.75rem;
+    min-height: 66px;
+    padding-inline: 1.25rem;
+  }
+  .nav-links {
+    position: absolute;
+    inset: 100% 0 auto;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--background);
+    border-bottom: 1px solid var(--line);
+    padding: 0.75rem 1.25rem 1.25rem;
+    box-shadow: 0 10px 30px #00000010;
+  }
+  .nav-links.open {
+    display: flex;
+  }
+  .nav-links a {
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 0.5rem;
+  }
+  .nav-links a:hover {
+    background: var(--surface);
+  }
+  .nav-links a[aria-current="location"] {
+    border-radius: 0.5rem;
+  }
+  .menu-button {
+    display: inline-flex;
+  }
+}
+
 @media (max-width: 768px) {
   .hero {
     display: flex;
@@ -1636,43 +2067,9 @@ footer a:hover {
     align-items: flex-start;
     flex-direction: column;
   }
-  .nav-links a[aria-current="location"] {
-    border-radius: 0.5rem;
-  }
   .contact {
     grid-template-columns: 1fr;
     gap: 2rem;
-  }
-  .topbar {
-    gap: 0.5rem;
-    min-height: 66px;
-    padding-inline: 1.25rem;
-  }
-  .nav-links {
-    position: absolute;
-    inset: 100% 0 auto;
-    display: none;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    background: var(--background);
-    border-bottom: 1px solid var(--line);
-    padding: 0.75rem 1.25rem 1.25rem;
-    box-shadow: 0 10px 30px #00000010;
-  }
-  .nav-links.open {
-    display: flex;
-  }
-  .nav-links a {
-    padding: 0.75rem;
-    font-size: 1rem;
-    border-radius: 0.5rem;
-  }
-  .nav-links a:hover {
-    background: var(--surface);
-  }
-  .menu-button {
-    display: inline-flex;
   }
   .role {
     grid-template-columns: 1fr;
@@ -1738,8 +2135,21 @@ footer a:hover {
   .project-card {
     padding: 1.25rem;
   }
-  .contact-actions > a {
-    flex: 1 1 auto;
+  .hero-actions,
+  .contact-actions {
+    width: 100%;
+  }
+  .hero-actions > a,
+  .hero-actions > button,
+  .contact-actions > a,
+  .contact-actions > button {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 140px;
+    text-align: center;
+  }
+  .recruiter-btn {
+    padding: 0 0.85rem;
+    font-size: 0.8rem;
   }
   footer {
     font-size: 0.8125rem;

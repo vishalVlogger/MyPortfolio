@@ -10,6 +10,7 @@ import {
 import Image from "next/image";
 import {
   ArrowUpRight,
+  Award,
   BriefcaseBusiness,
   Calendar,
   Check,
@@ -17,7 +18,11 @@ import {
   Code2,
   Copy,
   Download,
+  ExternalLink,
+  Eye,
+  FileText,
   GitFork,
+  GraduationCap,
   Layers,
   Mail,
   Menu,
@@ -34,6 +39,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -44,7 +57,15 @@ import {
 import { defaultPortfolio, type PortfolioData } from "@/lib/portfolio";
 import { ContactForm } from "@/components/contact-form";
 
-const nav = ["About", "Experience", "Projects", "Contact"];
+const nav = [
+  "About",
+  "Experience",
+  "Skills",
+  "Projects",
+  "Education",
+  "Certifications",
+  "Contact",
+];
 const accents = ["#c7ff4a", "#70a5ff", "#ff8b6a", "#d6a7ff", "#6de2c5"];
 
 function getCategoryIcon(cat: string) {
@@ -619,6 +640,17 @@ function Editor({
                     setData({ ...data, projects: a });
                   }}
                 />
+                <FileUploadField
+                  label="Screenshot / Mockup"
+                  accept="image/*"
+                  value={project.imageUrl ?? ""}
+                  onChange={(v) => {
+                    const a = [...data.projects];
+                    a[i] = { ...project, imageUrl: v };
+                    setData({ ...data, projects: a });
+                  }}
+                  preview
+                />
                 <label className="color-field">
                   <span>Accent</span>
                   <input
@@ -647,12 +679,166 @@ function Editor({
                       liveUrl: "https://example.com",
                       githubUrl: "https://github.com/",
                       accent: accents[data.projects.length % accents.length],
+                      imageUrl: "",
                     },
                   ],
                 })
               }
             >
               <Plus /> Add project
+            </button>
+          </div>
+        </details>
+
+        <details>
+          <summary>Certifications & Badges</summary>
+          <div className="editor-group">
+            {(data.certifications ?? []).map((cert, i) => (
+              <div className="editor-card" key={i}>
+                <button
+                  aria-label="Remove certification"
+                  onClick={() => {
+                    const list = (data.certifications ?? []).filter(
+                      (_, x) => x !== i,
+                    );
+                    setData({ ...data, certifications: list });
+                  }}
+                >
+                  <Trash2 />
+                </button>
+                <Field
+                  label="Certification name"
+                  value={cert.name}
+                  onChange={(v) => {
+                    const list = [...(data.certifications ?? [])];
+                    list[i] = { ...cert, name: v };
+                    setData({ ...data, certifications: list });
+                  }}
+                />
+                <Field
+                  label="Issuing organization"
+                  value={cert.issuer}
+                  onChange={(v) => {
+                    const list = [...(data.certifications ?? [])];
+                    list[i] = { ...cert, issuer: v };
+                    setData({ ...data, certifications: list });
+                  }}
+                />
+                <Field
+                  label="Date / Year"
+                  value={cert.date}
+                  onChange={(v) => {
+                    const list = [...(data.certifications ?? [])];
+                    list[i] = { ...cert, date: v };
+                    setData({ ...data, certifications: list });
+                  }}
+                />
+                <Field
+                  label="Verification URL"
+                  value={cert.credentialUrl ?? ""}
+                  onChange={(v) => {
+                    const list = [...(data.certifications ?? [])];
+                    list[i] = { ...cert, credentialUrl: v };
+                    setData({ ...data, certifications: list });
+                  }}
+                />
+              </div>
+            ))}
+            <button
+              className="add-button"
+              onClick={() =>
+                setData({
+                  ...data,
+                  certifications: [
+                    ...(data.certifications ?? []),
+                    {
+                      name: "New Certification",
+                      issuer: "Issuer (e.g. Salesforce, AWS)",
+                      date: "2024",
+                      credentialUrl: "",
+                    },
+                  ],
+                })
+              }
+            >
+              <Plus /> Add certification
+            </button>
+          </div>
+        </details>
+
+        <details>
+          <summary>Education</summary>
+          <div className="editor-group">
+            {(data.education ?? []).map((edu, i) => (
+              <div className="editor-card" key={i}>
+                <button
+                  aria-label="Remove education"
+                  onClick={() => {
+                    const list = (data.education ?? []).filter(
+                      (_, x) => x !== i,
+                    );
+                    setData({ ...data, education: list });
+                  }}
+                >
+                  <Trash2 />
+                </button>
+                <Field
+                  label="Institution / University"
+                  value={edu.institution}
+                  onChange={(v) => {
+                    const list = [...(data.education ?? [])];
+                    list[i] = { ...edu, institution: v };
+                    setData({ ...data, education: list });
+                  }}
+                />
+                <Field
+                  label="Degree / Field of study"
+                  value={edu.degree}
+                  onChange={(v) => {
+                    const list = [...(data.education ?? [])];
+                    list[i] = { ...edu, degree: v };
+                    setData({ ...data, education: list });
+                  }}
+                />
+                <Field
+                  label="Dates"
+                  value={edu.dates}
+                  onChange={(v) => {
+                    const list = [...(data.education ?? [])];
+                    list[i] = { ...edu, dates: v };
+                    setData({ ...data, education: list });
+                  }}
+                />
+                <Field
+                  label="Details / Highlights"
+                  value={edu.details ?? ""}
+                  multiline
+                  onChange={(v) => {
+                    const list = [...(data.education ?? [])];
+                    list[i] = { ...edu, details: v };
+                    setData({ ...data, education: list });
+                  }}
+                />
+              </div>
+            ))}
+            <button
+              className="add-button"
+              onClick={() =>
+                setData({
+                  ...data,
+                  education: [
+                    ...(data.education ?? []),
+                    {
+                      institution: "University Name",
+                      degree: "Degree / Course",
+                      dates: "2020 — 2024",
+                      details: "",
+                    },
+                  ],
+                })
+              }
+            >
+              <Plus /> Add education
             </button>
           </div>
         </details>
@@ -845,6 +1031,9 @@ export function Portfolio() {
           return;
         const next = {
           ...content,
+          education: content.education ?? defaultPortfolio.education ?? [],
+          certifications:
+            content.certifications ?? defaultPortfolio.certifications ?? [],
           contact: { ...defaultPortfolio.contact, ...content.contact },
         };
         lastLoaded.current = JSON.stringify(next);
@@ -982,6 +1171,17 @@ export function Portfolio() {
 
   const isDataResume = Boolean(data.resumeUrl?.startsWith("data:"));
 
+  const [quickScanOpen, setQuickScanOpen] = useState(false);
+  const [resumeModalOpen, setResumeModalOpen] = useState(false);
+
+  const handleSpotlightMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
+    e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
+  };
+
   const save = async () => {
     setSaving(true);
     setSaved(false);
@@ -1094,6 +1294,14 @@ export function Portfolio() {
           ))}
         </nav>
         <div className="header-actions">
+          <button
+            type="button"
+            className="recruiter-btn"
+            onClick={() => setQuickScanOpen(true)}
+            aria-label="Open recruiter quick scan"
+          >
+            <Zap /> Quick Scan
+          </button>
           <button
             className="icon-button"
             onClick={toggleTheme}
@@ -1246,6 +1454,14 @@ export function Portfolio() {
             <a className="primary-link" href="#projects">
               View projects <ArrowUpRight />
             </a>
+            <button
+              type="button"
+              className="secondary-link"
+              onClick={() => setResumeModalOpen(true)}
+              aria-label="Preview résumé in modal"
+            >
+              Preview Resume <Eye />
+            </button>
             <a
               className="secondary-link"
               href={data.resumeUrl || "#"}
@@ -1253,7 +1469,7 @@ export function Portfolio() {
               rel="noreferrer"
               download={isDataResume ? "resume.pdf" : undefined}
             >
-              View résumé <Download />
+              Download <Download />
             </a>
           </div>
         </section>
@@ -1354,10 +1570,25 @@ export function Portfolio() {
           <div className="project-grid">
             {filteredProjects.map((project, i) => (
               <article
-                className="project-card reveal-fade"
+                className="project-card spotlight-card reveal-fade"
                 key={`${project.title}-${i}`}
                 style={{ "--project-accent": project.accent } as CSSProperties}
+                onMouseMove={handleSpotlightMove}
               >
+                {project.imageUrl && (
+                  <div className="project-mockup">
+                    <div className="project-mockup-bar">
+                      <span className="mockup-dot" />
+                      <span className="mockup-dot" />
+                      <span className="mockup-dot" />
+                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={project.imageUrl}
+                      alt={`${project.title} screenshot`}
+                    />
+                  </div>
+                )}
                 <div className="project-header">
                   <div className="project-visual" aria-hidden="true">
                     <strong>{project.title.slice(0, 1)}</strong>
@@ -1422,6 +1653,86 @@ export function Portfolio() {
           </div>
         </section>
 
+        <section className="section education-section" id="education">
+          <div className="section-heading">
+            <h2>
+              <GraduationCap /> Education
+            </h2>
+          </div>
+          <p className="section-subtitle">
+            Academic qualifications, university degrees, and foundation in
+            computer science.
+          </p>
+
+          {data.education && data.education.length > 0 && (
+            <div className="education-grid">
+              {data.education.map((edu, i) => (
+                <article
+                  className="education-card spotlight-card reveal-fade"
+                  key={`${edu.institution}-${i}`}
+                  onMouseMove={handleSpotlightMove}
+                >
+                  <div className="role-header-box">
+                    <span className="role-dates">
+                      <GraduationCap /> {edu.dates}
+                    </span>
+                    <h3>{edu.institution}</h3>
+                    <p className="education-degree">{edu.degree}</p>
+                  </div>
+                  {edu.details && (
+                    <p className="education-details">{edu.details}</p>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="section certifications-section" id="certifications">
+          <div className="section-heading">
+            <h2>
+              <Award /> Certifications & Badges
+            </h2>
+          </div>
+          <p className="section-subtitle">
+            Industry-recognized credentials, certified expertise, and technical
+            validations.
+          </p>
+
+          {data.certifications && data.certifications.length > 0 && (
+            <div className="credentials-grid">
+              {data.certifications.map((cert, i) => (
+                <article
+                  className="credential-card spotlight-card reveal-fade"
+                  key={`${cert.name}-${i}`}
+                  onMouseMove={handleSpotlightMove}
+                >
+                  <div className="credential-icon" aria-hidden="true">
+                    <Award />
+                  </div>
+                  <div className="credential-content">
+                    <h3>{cert.name}</h3>
+                    <p className="credential-issuer">{cert.issuer}</p>
+                    <span className="credential-date">{cert.date}</span>
+                    {cert.credentialUrl && (
+                      <div>
+                        <a
+                          className="credential-link"
+                          href={cert.credentialUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Verify credential <ExternalLink />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
         <section className="learning section reveal-fade" id="learning">
           <div className="learning-title-box">
             <span className="learning-beacon" />
@@ -1460,13 +1771,208 @@ export function Portfolio() {
                 rel="noreferrer"
                 download={isDataResume ? "resume.pdf" : undefined}
               >
-                View résumé <Download />
+                View Resume <Download />
               </a>
             </div>
           </div>
           <ContactForm recipient={data.contact.email || data.hero.email} />
         </section>
       </main>
+
+      {/* Recruiter Quick Scan Modal */}
+      <Dialog open={quickScanOpen} onOpenChange={setQuickScanOpen}>
+        <DialogContent className="quickscan-dialog">
+          <DialogHeader>
+            <DialogTitle>Recruiter & HR Quick Scan</DialogTitle>
+            <DialogDescription>
+              A high-density technical executive summary for rapid candidate
+              assessment.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="quickscan-hero">
+            <div className="quickscan-portrait">
+              {data.hero.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={data.hero.photoUrl} alt={data.hero.name} />
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    placeItems: "center",
+                    height: "100%",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {initials}
+                </div>
+              )}
+            </div>
+            <div className="quickscan-meta">
+              <h2>{data.hero.name}</h2>
+              <p>{data.hero.role}</p>
+              <div className="quickscan-badge-row">
+                <span className="quickscan-badge active-status">
+                  <span
+                    className="status-dot"
+                    style={{ width: 6, height: 6 }}
+                  />{" "}
+                  {data.hero.availability}
+                </span>
+                <span className="quickscan-badge">📍 {data.hero.location}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="quickscan-section">
+            <h4>Executive Overview</h4>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "0.88rem",
+                color: "var(--muted)",
+                lineHeight: 1.6,
+              }}
+            >
+              {data.hero.bio}
+            </p>
+          </div>
+
+          <div className="quickscan-section">
+            <h4>Primary Tech Stack & Capabilities</h4>
+            <div className="quickscan-pills">
+              {data.skills
+                .flatMap((s) => s.items)
+                .slice(0, 16)
+                .map((skill) => (
+                  <span key={skill} className="quickscan-pill">
+                    {skill}
+                  </span>
+                ))}
+            </div>
+          </div>
+
+          <div className="quickscan-section">
+            <h4>Key Projects & Proven Highlights</h4>
+            <ul
+              style={{
+                margin: "0.4rem 0 0",
+                paddingLeft: "1.2rem",
+                fontSize: "0.86rem",
+                color: "var(--muted)",
+                lineHeight: 1.6,
+              }}
+            >
+              {data.projects.map((p) => (
+                <li key={p.title} style={{ marginBottom: "0.45rem" }}>
+                  <strong style={{ color: "var(--foreground)" }}>
+                    {p.title}
+                  </strong>{" "}
+                  — {parseBullets(p.description)[0] || p.description}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="quickscan-actions">
+            <button
+              type="button"
+              className="primary-link"
+              onClick={() => {
+                setQuickScanOpen(false);
+                setResumeModalOpen(true);
+              }}
+            >
+              <FileText /> Preview Full Résumé
+            </button>
+            <a
+              className="secondary-link"
+              href={`mailto:${data.contact.email || data.hero.email}`}
+            >
+              <Mail /> Email directly
+            </a>
+            <a
+              className="secondary-link"
+              href={data.hero.linkedin}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <BriefcaseBusiness /> LinkedIn
+            </a>
+            <a
+              className="secondary-link"
+              href={data.hero.github}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <GitFork /> GitHub
+            </a>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Direct In-Browser Resume Preview Modal */}
+      <Dialog open={resumeModalOpen} onOpenChange={setResumeModalOpen}>
+        <DialogContent
+          className="quickscan-dialog"
+          style={{ maxWidth: 780, width: "min(780px, calc(100vw - 2rem))" }}
+        >
+          <DialogHeader>
+            <DialogTitle>Interactive Résumé Preview</DialogTitle>
+            <DialogDescription>
+              Inspect candidate credentials directly in-browser or download for
+              your records.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="resume-preview-frame">
+            {data.resumeUrl ? (
+              <iframe
+                src={data.resumeUrl}
+                title="Candidate Résumé Preview"
+                style={{ width: "100%", height: "100%", border: "none" }}
+              />
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  placeItems: "center",
+                  height: "100%",
+                  color: "var(--muted)",
+                }}
+              >
+                No résumé has been uploaded yet.
+              </div>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "1rem",
+            }}
+          >
+            <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+              {isDataResume
+                ? "Direct document upload"
+                : "Hosted remote document"}
+            </span>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <a
+                className="primary-link"
+                href={data.resumeUrl || "#"}
+                download={isDataResume ? "resume.pdf" : undefined}
+                target={isDataResume ? undefined : "_blank"}
+                rel="noreferrer"
+              >
+                <Download /> Download Copy
+              </a>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <button
         type="button"
