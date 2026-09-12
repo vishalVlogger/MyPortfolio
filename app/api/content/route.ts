@@ -9,7 +9,23 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const db = getDb();
   const [record] = await db.select().from(portfolioContent).where(eq(portfolioContent.id, 1));
-  if (record) return Response.json(JSON.parse(record.data), { headers: { 'Cache-Control': 'no-store' } });
+  if (record) {
+    try {
+      const parsed = JSON.parse(record.data) as PortfolioData;
+      // If the database has placeholder "Your Name", upgrade it to Vishal's real profile
+      if (parsed?.hero?.name === 'Your Name' || !parsed?.hero?.name) {
+        const now = new Date().toISOString();
+        await db
+          .insert(portfolioContent)
+          .values({ id: 1, data: JSON.stringify(defaultPortfolio), updatedAt: now })
+          .onConflictDoUpdate({ target: portfolioContent.id, set: { data: JSON.stringify(defaultPortfolio), updatedAt: now } });
+        return Response.json(defaultPortfolio, { headers: { 'Cache-Control': 'no-store' } });
+      }
+      return Response.json(parsed, { headers: { 'Cache-Control': 'no-store' } });
+    } catch {
+      return Response.json(defaultPortfolio, { headers: { 'Cache-Control': 'no-store' } });
+    }
+  }
   await db.insert(portfolioContent).values({ id: 1, data: JSON.stringify(defaultPortfolio), updatedAt: new Date().toISOString() });
   return Response.json(defaultPortfolio, { headers: { 'Cache-Control': 'no-store' } });
 }
