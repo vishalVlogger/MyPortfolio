@@ -1,9 +1,40 @@
-export type Experience = { company: string; title: string; dates: string; bullets: string[] };
+export type Experience = {
+  company: string;
+  title: string;
+  dates: string;
+  bullets: string[];
+};
 export type SkillGroup = { category: string; items: string[] };
-export type Project = { title: string; description: string; stack: string[]; liveUrl: string; githubUrl: string; accent: string; imageUrl?: string };
-export type Education = { institution: string; degree: string; dates: string; details?: string };
-export type Certification = { name: string; issuer: string; date: string; credentialUrl?: string; badgeUrl?: string };
-export type Testimonial = { name: string; role: string; company: string; quote: string; avatarUrl?: string; linkedInUrl?: string };
+export type Project = {
+  title: string;
+  description: string;
+  stack: string[];
+  liveUrl: string;
+  githubUrl: string;
+  accent: string;
+  imageUrl?: string;
+};
+export type Education = {
+  institution: string;
+  degree: string;
+  dates: string;
+  details?: string;
+};
+export type Certification = {
+  name: string;
+  issuer: string;
+  date: string;
+  credentialUrl?: string;
+  badgeUrl?: string;
+};
+export type Testimonial = {
+  name: string;
+  role: string;
+  company: string;
+  quote: string;
+  avatarUrl?: string;
+  linkedInUrl?: string;
+};
 
 export type PortfolioData = {
   hero: {
@@ -34,7 +65,8 @@ export const defaultPortfolio: PortfolioData = {
   hero: {
     name: "Vishal Patil",
     role: "Software Developer",
-    tagline: "Building scalable business applications, automation, and modern web solutions.",
+    tagline:
+      "Building scalable business applications, automation, and modern web solutions.",
     bio: "Software Developer focused on Salesforce and ASP.NET, with hands-on experience building business applications, automation, integrations, and modernising legacy enterprise systems.",
     location: "Pune, Maharashtra, India",
     availability: "Open to Salesforce & Gen AI Opportunity",
@@ -86,7 +118,8 @@ export const defaultPortfolio: PortfolioData = {
       name: "Engineering Lead",
       role: "Delivery Manager",
       company: "Relisoft Technologies",
-      quote: "Vishal possesses great technical aptitude across both enterprise .NET migrations and modern Salesforce ecosystems. Delivers reliably with great attention to detail.",
+      quote:
+        "Vishal possesses great technical aptitude across both enterprise .NET migrations and modern Salesforce ecosystems. Delivers reliably with great attention to detail.",
       linkedInUrl: "https://www.linkedin.com/in/vishal-patil03/",
     },
   ],

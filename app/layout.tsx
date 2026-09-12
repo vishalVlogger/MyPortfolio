@@ -1,20 +1,21 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
 
 const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: 'Vishal Patil — Software Developer',
-  description: 'Personal portfolio, Salesforce & ASP.NET projects, experience, and contact details.',
+  title: "Vishal Patil — Software Developer",
+  description:
+    "Personal portfolio, Salesforce & ASP.NET projects, experience, and contact details.",
 };
 
 export default function RootLayout({
