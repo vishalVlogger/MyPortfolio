@@ -13,8 +13,12 @@ import {
   Award,
   BriefcaseBusiness,
   Calendar,
+  CalendarDays,
   Check,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
+  Clock,
   Code2,
   Copy,
   Download,
@@ -29,6 +33,7 @@ import {
   Moon,
   Pencil,
   Plus,
+  Quote,
   Save,
   Sparkles,
   Sun,
@@ -54,7 +59,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { defaultPortfolio, type PortfolioData } from "@/lib/portfolio";
+import {
+  defaultPortfolio,
+  type PortfolioData,
+  type Testimonial,
+} from "@/lib/portfolio";
 import { ContactForm } from "@/components/contact-form";
 
 const nav = [
@@ -64,6 +73,7 @@ const nav = [
   "Projects",
   "Education",
   "Certifications",
+  "Testimonials",
   "Contact",
 ];
 const accents = ["#c7ff4a", "#70a5ff", "#ff8b6a", "#d6a7ff", "#6de2c5"];
@@ -444,6 +454,11 @@ function Editor({
               label="Email"
               value={data.hero.email}
               onChange={(v) => hero("email", v)}
+            />
+            <Field
+              label="Calendar / Meeting link (e.g. Cal.com or Calendly)"
+              value={data.hero.calendarUrl ?? ""}
+              onChange={(v) => hero("calendarUrl", v)}
             />
           </div>
         </details>
@@ -844,6 +859,106 @@ function Editor({
         </details>
 
         <details>
+          <summary>Testimonials & Recommendations</summary>
+          <div className="editor-group">
+            {(data.testimonials ?? []).map((test, i) => (
+              <div className="editor-card" key={i}>
+                <button
+                  aria-label="Remove recommendation"
+                  onClick={() => {
+                    const list = (data.testimonials ?? []).filter(
+                      (_, x) => x !== i,
+                    );
+                    setData({ ...data, testimonials: list });
+                  }}
+                >
+                  <Trash2 />
+                </button>
+                <Field
+                  label="Recommender Name"
+                  value={test.name}
+                  onChange={(v) => {
+                    const list = [...(data.testimonials ?? [])];
+                    list[i] = { ...test, name: v };
+                    setData({ ...data, testimonials: list });
+                  }}
+                />
+                <Field
+                  label="Role / Title"
+                  value={test.role}
+                  onChange={(v) => {
+                    const list = [...(data.testimonials ?? [])];
+                    list[i] = { ...test, role: v };
+                    setData({ ...data, testimonials: list });
+                  }}
+                />
+                <Field
+                  label="Company / Team"
+                  value={test.company}
+                  onChange={(v) => {
+                    const list = [...(data.testimonials ?? [])];
+                    list[i] = { ...test, company: v };
+                    setData({ ...data, testimonials: list });
+                  }}
+                />
+                <Field
+                  label="Quote / Recommendation"
+                  value={test.quote}
+                  multiline
+                  onChange={(v) => {
+                    const list = [...(data.testimonials ?? [])];
+                    list[i] = { ...test, quote: v };
+                    setData({ ...data, testimonials: list });
+                  }}
+                />
+                <Field
+                  label="LinkedIn Profile URL"
+                  value={test.linkedInUrl ?? ""}
+                  onChange={(v) => {
+                    const list = [...(data.testimonials ?? [])];
+                    list[i] = { ...test, linkedInUrl: v };
+                    setData({ ...data, testimonials: list });
+                  }}
+                />
+                <FileUploadField
+                  label="Photo / Avatar (optional)"
+                  accept="image/*"
+                  value={test.avatarUrl ?? ""}
+                  onChange={(v) => {
+                    const list = [...(data.testimonials ?? [])];
+                    list[i] = { ...test, avatarUrl: v };
+                    setData({ ...data, testimonials: list });
+                  }}
+                  preview
+                />
+              </div>
+            ))}
+            <button
+              className="add-button"
+              onClick={() =>
+                setData({
+                  ...data,
+                  testimonials: [
+                    ...(data.testimonials ?? []),
+                    {
+                      name: "Colleague Name",
+                      role: "Senior Engineering Manager",
+                      company: "Company Name",
+                      quote:
+                        "Describe how you contributed and delivered results with high ownership.",
+                      linkedInUrl: "https://linkedin.com",
+                      avatarUrl: "",
+                    },
+                  ],
+                })
+              }
+            >
+              <Plus /> Add recommendation
+            </button>
+          </div>
+        </details>
+
+        <details>
           <summary>Learning, resume & contact</summary>
           <div className="editor-group">
             <ListField
@@ -1031,9 +1146,19 @@ export function Portfolio() {
           return;
         const next = {
           ...content,
+          hero: {
+            ...defaultPortfolio.hero,
+            ...content.hero,
+            calendarUrl:
+              content.hero?.calendarUrl ??
+              defaultPortfolio.hero.calendarUrl ??
+              "",
+          },
           education: content.education ?? defaultPortfolio.education ?? [],
           certifications:
             content.certifications ?? defaultPortfolio.certifications ?? [],
+          testimonials:
+            content.testimonials ?? defaultPortfolio.testimonials ?? [],
           contact: { ...defaultPortfolio.contact, ...content.contact },
         };
         lastLoaded.current = JSON.stringify(next);
@@ -1173,6 +1298,8 @@ export function Portfolio() {
 
   const [quickScanOpen, setQuickScanOpen] = useState(false);
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   const handleSpotlightMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -1361,13 +1488,21 @@ export function Portfolio() {
         )}
 
         <section className="hero" id="about">
-          <div className="hero-kicker reveal">
+          <button
+            type="button"
+            className="hero-kicker reveal"
+            onClick={() => setBookingModalOpen(true)}
+            aria-label="Open scheduling and availability details"
+          >
             <span className="status-dot-wrapper">
               <span className="status-ping" />
               <span className="status-dot" />
             </span>
-            {data.hero.availability}
-          </div>
+            <span>{data.hero.availability}</span>
+            <span className="kicker-action">
+              · Book a chat <ArrowUpRight style={{ width: 13, height: 13 }} />
+            </span>
+          </button>
 
           <div className="hero-profile reveal">
             <div
@@ -1454,6 +1589,14 @@ export function Portfolio() {
             <a className="primary-link" href="#projects">
               View projects <ArrowUpRight />
             </a>
+            <button
+              type="button"
+              className="secondary-link"
+              onClick={() => setBookingModalOpen(true)}
+              aria-label="Schedule a 15-minute intro chat"
+            >
+              Book a call <CalendarDays />
+            </button>
             <button
               type="button"
               className="secondary-link"
@@ -1733,6 +1876,131 @@ export function Portfolio() {
           )}
         </section>
 
+        {data.testimonials && data.testimonials.length > 0 && (
+          <section className="section testimonials-section" id="testimonials">
+            <div className="section-heading">
+              <h2>
+                <Quote /> Recommendations & Endorsements
+              </h2>
+            </div>
+            <p className="section-subtitle">
+              Perspectives and endorsements from engineering leaders, product
+              partners, and colleagues.
+            </p>
+
+            <div className="testimonials-carousel">
+              <div className="testimonial-slide-wrap">
+                {(() => {
+                  const currentTestimonial =
+                    data.testimonials[
+                      activeTestimonial % data.testimonials.length
+                    ] || data.testimonials[0];
+                  return (
+                    <article
+                      className="testimonial-card spotlight-card reveal-fade is-visible"
+                      key={currentTestimonial.name}
+                      onMouseMove={handleSpotlightMove}
+                    >
+                      <div
+                        className="testimonial-quote-icon"
+                        aria-hidden="true"
+                      >
+                        <Quote />
+                      </div>
+                      <p className="testimonial-quote">
+                        “{currentTestimonial.quote}”
+                      </p>
+
+                      <div className="testimonial-footer">
+                        <div className="testimonial-author-box">
+                          <div className="testimonial-avatar">
+                            {currentTestimonial.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={currentTestimonial.avatarUrl}
+                                alt={currentTestimonial.name}
+                              />
+                            ) : (
+                              currentTestimonial.name
+                                .split(/\s+/)
+                                .map((n) => n[0])
+                                .slice(0, 2)
+                                .join("")
+                            )}
+                          </div>
+                          <div className="testimonial-author-info">
+                            <h4>{currentTestimonial.name}</h4>
+                            <p>
+                              {currentTestimonial.role} ·{" "}
+                              {currentTestimonial.company}
+                            </p>
+                          </div>
+                        </div>
+
+                        {currentTestimonial.linkedInUrl && (
+                          <a
+                            href={currentTestimonial.linkedInUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="testimonial-linkedin-btn"
+                          >
+                            LinkedIn profile <ExternalLink />
+                          </a>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })()}
+              </div>
+
+              {data.testimonials.length > 1 && (
+                <div className="testimonial-controls">
+                  <div className="testimonial-dots">
+                    {data.testimonials.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        className={`testimonial-dot ${activeTestimonial === idx ? "active" : ""}`}
+                        onClick={() => setActiveTestimonial(idx)}
+                        aria-label={`Go to recommendation ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="testimonial-nav-arrows">
+                    <button
+                      type="button"
+                      className="testimonial-arrow-btn"
+                      onClick={() =>
+                        setActiveTestimonial(
+                          (prev) =>
+                            (prev - 1 + (data.testimonials?.length || 1)) %
+                            (data.testimonials?.length || 1),
+                        )
+                      }
+                      aria-label="Previous recommendation"
+                    >
+                      <ChevronLeft style={{ width: 18, height: 18 }} />
+                    </button>
+                    <button
+                      type="button"
+                      className="testimonial-arrow-btn"
+                      onClick={() =>
+                        setActiveTestimonial(
+                          (prev) =>
+                            (prev + 1) % (data.testimonials?.length || 1),
+                        )
+                      }
+                      aria-label="Next recommendation"
+                    >
+                      <ChevronRight style={{ width: 18, height: 18 }} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <section className="learning section reveal-fade" id="learning">
           <div className="learning-title-box">
             <span className="learning-beacon" />
@@ -1750,6 +2018,14 @@ export function Portfolio() {
             <h2>{data.contact.heading}</h2>
             <p>{data.contact.note}</p>
             <div className="contact-actions">
+              <button
+                type="button"
+                className="secondary-link"
+                onClick={() => setBookingModalOpen(true)}
+                aria-label="Schedule a 15-minute intro chat"
+              >
+                Book a call <CalendarDays />
+              </button>
               <a
                 className="secondary-link"
                 href={`mailto:${data.contact.email || data.hero.email}`}
@@ -1968,6 +2244,87 @@ export function Portfolio() {
                 rel="noreferrer"
               >
                 <Download /> Download Copy
+              </a>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick 15-Minute Intro & Calendar Booking Modal */}
+      <Dialog open={bookingModalOpen} onOpenChange={setBookingModalOpen}>
+        <DialogContent className="booking-dialog">
+          <DialogHeader>
+            <DialogTitle>Let’s Connect & Talk</DialogTitle>
+            <DialogDescription>
+              Schedule an intro call or send a direct inquiry about roles,
+              contracts, or engineering projects.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="booking-body">
+            <div className="booking-hero-card">
+              <span className="booking-status-indicator" />
+              <div>
+                <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700 }}>
+                  Currently {data.hero.availability}
+                </h4>
+                <p
+                  style={{
+                    margin: "0.2rem 0 0",
+                    fontSize: "0.82rem",
+                    color: "var(--muted)",
+                  }}
+                >
+                  Typically replies within 24 hours · Fast turnaround
+                </p>
+              </div>
+            </div>
+
+            <div className="booking-pills">
+              <span className="booking-pill">
+                <Clock /> 15–30 Min Intro
+              </span>
+              <span className="booking-pill">
+                <CalendarDays /> Google Meet / Zoom
+              </span>
+              <span className="booking-pill">📍 {data.hero.location}</span>
+            </div>
+
+            <div className="booking-actions">
+              {data.hero.calendarUrl ? (
+                <a
+                  className="booking-primary-btn"
+                  href={data.hero.calendarUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <CalendarDays /> Book instant slot on calendar{" "}
+                  <ArrowUpRight />
+                </a>
+              ) : (
+                <a
+                  className="booking-primary-btn"
+                  href={`mailto:${data.contact.email || data.hero.email}?subject=Intro%20Chat%20%2F%20Opportunity&body=Hi%20${encodeURIComponent(data.hero.name)}%2C%0A%0AI%20came%20across%20your%20portfolio%20and%20would%20love%20to%20connect%20for%20a%20brief%2015-minute%20intro%20chat%20regarding%20an%20opportunity.`}
+                >
+                  <Mail /> Schedule via email <ArrowUpRight />
+                </a>
+              )}
+
+              <a
+                className="booking-secondary-btn"
+                href={`mailto:${data.contact.email || data.hero.email}`}
+              >
+                <Mail /> Send direct email:{" "}
+                {data.contact.email || data.hero.email}
+              </a>
+
+              <a
+                className="booking-secondary-btn"
+                href={data.hero.linkedin}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <BriefcaseBusiness /> Message on LinkedIn <ExternalLink />
               </a>
             </div>
           </div>

@@ -360,20 +360,34 @@ main {
   margin-bottom: 2rem;
   grid-area: status;
   width: fit-content;
-  padding: 0.4rem 0.9rem;
+  padding: 0.4rem 0.95rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 80%, transparent);
+  background: color-mix(in srgb, var(--card) 85%, transparent);
   backdrop-filter: blur(8px);
   box-shadow: 0 2px 10px #00000008;
+  cursor: pointer;
   transition:
     border-color 0.2s ease,
-    transform 0.2s ease;
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .hero-kicker:hover {
-  border-color: color-mix(in srgb, #56b88b 45%, var(--line));
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, #10b981 55%, var(--line));
+  background: color-mix(in srgb, #10b981 10%, var(--card));
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 16px color-mix(in srgb, #10b981 20%, transparent);
+}
+
+.hero-kicker .kicker-action {
+  color: var(--accent);
+  font-weight: 600;
+  margin-left: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .status-dot-wrapper {
@@ -1512,6 +1526,335 @@ main {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+/* Testimonials & Endorsements Section */
+.testimonials-section {
+  position: relative;
+}
+
+.testimonials-carousel {
+  position: relative;
+  margin-top: 1.5rem;
+}
+
+.testimonial-slide-wrap {
+  position: relative;
+  min-height: 220px;
+}
+
+.testimonial-card {
+  padding: 2.25rem 2.5rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 70%
+    ),
+    var(--card);
+  box-shadow: 0 10px 30px #00000008;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.testimonial-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.testimonial-quote-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.testimonial-quote-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.testimonial-quote {
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  line-height: 1.6;
+  font-weight: 500;
+  color: var(--foreground);
+  margin: 0;
+  letter-spacing: -0.015em;
+  font-style: italic;
+}
+
+.testimonial-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.testimonial-author-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.testimonial-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 30%, var(--surface)),
+    var(--surface)
+  );
+  border: 2px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  display: grid;
+  place-items: center;
+  font-weight: 750;
+  font-size: 0.95rem;
+  color: var(--accent);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.testimonial-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.testimonial-author-info h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.testimonial-author-info p {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.testimonial-linkedin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: all 0.2s ease;
+}
+
+.testimonial-linkedin-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.testimonial-linkedin-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Carousel Controls */
+.testimonial-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
+
+.testimonial-dots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.testimonial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--line);
+  border: 0;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  padding: 0;
+}
+
+.testimonial-dot.active {
+  width: 24px;
+  background: var(--accent);
+}
+
+.testimonial-nav-arrows {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.testimonial-arrow-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 0.65rem;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--foreground);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.testimonial-arrow-btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* Quick Calendar Booking Modal */
+.booking-dialog {
+  max-width: 580px !important;
+  width: min(580px, calc(100vw - 2rem)) !important;
+  border-radius: 1.25rem !important;
+  background: var(--card) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4) !important;
+}
+
+.booking-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 0.75rem;
+}
+
+.booking-hero-card {
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line));
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.booking-status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10b981;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.booking-status-indicator::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: #10b981;
+  opacity: 0.6;
+  animation: pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.booking-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.booking-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 550;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.booking-pill svg {
+  width: 13px;
+  height: 13px;
+  color: var(--accent);
+}
+
+.booking-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.booking-primary-btn {
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+  background: var(--accent);
+  color: var(--accent-ink);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.booking-primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 45%, transparent);
+  filter: brightness(1.05);
+}
+
+.booking-primary-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.booking-secondary-btn {
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--line);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.booking-secondary-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
 }
 
 .learning-title-box {

@@ -3,15 +3,29 @@ export type SkillGroup = { category: string; items: string[] };
 export type Project = { title: string; description: string; stack: string[]; liveUrl: string; githubUrl: string; accent: string; imageUrl?: string };
 export type Education = { institution: string; degree: string; dates: string; details?: string };
 export type Certification = { name: string; issuer: string; date: string; credentialUrl?: string; badgeUrl?: string };
+export type Testimonial = { name: string; role: string; company: string; quote: string; avatarUrl?: string; linkedInUrl?: string };
 
 export type PortfolioData = {
-  hero: { name: string; role: string; tagline: string; bio: string; location: string; availability: string; photoUrl: string; github: string; linkedin: string; email: string };
+  hero: {
+    name: string;
+    role: string;
+    tagline: string;
+    bio: string;
+    location: string;
+    availability: string;
+    photoUrl: string;
+    github: string;
+    linkedin: string;
+    email: string;
+    calendarUrl?: string;
+  };
   experience: Experience[];
   skills: SkillGroup[];
   projects: Project[];
   learning: string[];
   education?: Education[];
   certifications?: Certification[];
+  testimonials?: Testimonial[];
   resumeUrl: string;
   contact: { heading: string; note: string; email?: string };
 };
@@ -23,6 +37,7 @@ export const defaultPortfolio: PortfolioData = {
     bio: 'I am a product-minded developer focused on useful, beautifully engineered experiences. I enjoy moving between interface details, resilient systems, and the decisions that connect them.',
     location: 'Based in India · Working worldwide', availability: 'Open to new opportunities', photoUrl: '',
     github: 'https://github.com/', linkedin: 'https://linkedin.com/in/', email: 'hello@example.com',
+    calendarUrl: '',
   },
   experience: [
     { company: 'Your Company', title: 'Software Developer', dates: '2024 — Present', bullets: ['Built and shipped customer-facing features across the full product stack.', 'Improved critical workflows through thoughtful engineering and close collaboration.', 'Raised quality with pragmatic testing, documentation, and performance work.'] },
@@ -34,6 +49,22 @@ export const defaultPortfolio: PortfolioData = {
   certifications: [
     { name: 'Salesforce Certified Administrator', issuer: 'Salesforce', date: '2024', credentialUrl: 'https://trailhead.salesforce.com/' },
     { name: 'Salesforce Platform Developer I', issuer: 'Salesforce', date: '2024', credentialUrl: 'https://trailhead.salesforce.com/' }
+  ],
+  testimonials: [
+    {
+      name: 'Sarah Lin',
+      role: 'Engineering Director',
+      company: 'TechFlow Labs',
+      quote: 'An exceptionally thoughtful engineer who doesn’t just write clean, reliable code, but genuinely cares about the user experience and team velocity. Always dependable on critical deliveries.',
+      linkedInUrl: 'https://linkedin.com',
+    },
+    {
+      name: 'Alex Rivera',
+      role: 'Senior Product Manager',
+      company: 'Nexis Systems',
+      quote: 'One of the smoothest developer collaborations I’ve experienced. Quick to translate complex requirements into intuitive features with incredible attention to detail and zero technical debt.',
+      linkedInUrl: 'https://linkedin.com',
+    },
   ],
   skills: [
     { category: 'Languages', items: ['TypeScript', 'JavaScript', 'Python', 'SQL'] },
