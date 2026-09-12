@@ -1025,7 +1025,7 @@ export function Portfolio() {
   const [selectedTag, setSelectedTag] = useState("All");
   const csrfToken = useRef("");
   const [loadError, setLoadError] = useState("");
-  const [hasContent, setHasContent] = useState(false);
+  const [hasContent, setHasContent] = useState(true);
   const lastLoaded = useRef("");
   const dataRef = useRef(data);
 
@@ -1368,7 +1368,7 @@ export function Portfolio() {
     }
   };
 
-  if (!hasContent)
+  if (!data?.hero?.name && loading)
     return (
       <main className="section" aria-busy={loading}>
         <output>{loadError || "Loading portfolio…"}</output>
