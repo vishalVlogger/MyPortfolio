@@ -1,8 +1,6 @@
 declare namespace Cloudflare {
   interface Env {
     DB: D1Database;
-    PORTFOLIO_OWNER_ID: string;
-    PORTFOLIO_OWNER_EMAIL: string;
     PORTFOLIO_SYNC_KEY?: string;
   }
 }

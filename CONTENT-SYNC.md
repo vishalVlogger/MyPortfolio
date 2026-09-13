@@ -26,13 +26,17 @@ development server through a tunnel or reverse proxy or share your environment
 file. The server binds to loopback, checks the client address, Host, Origin and
 Fetch Metadata, and requires an unpredictable CSRF token for saves. The remote
 key is forwarded only by the server to the configured HTTPS origin; redirects
-are blocked. The hosted API validates the key on every save and retains the
-existing owner sign-in behavior. Removing or rotating the hosted key revokes
+are blocked. The hosted API validates the key on every save. It intentionally
+does not trust identity headers supplied by the request because public clients
+can spoof them. Removing or rotating the hosted key revokes
 local publishing access; update the local key and restart after rotation.
 
 The UI checks remote permission before enabling Edit. Failed saves retain the
 draft and display an error. There is no offline save queue or automatic retry.
 Simultaneous edits are last-write-wins: avoid editing from two windows at once.
+Uploaded images are converted to a bounded JPEG. Inline resumes must be PDFs no
+larger than 900 KB; use an HTTPS link for larger documents. The complete saved
+record is capped below D1's 2 MB row limit.
 
 Run security regression tests with:
 `node --experimental-strip-types --test tests/local-editor.test.mjs`.
