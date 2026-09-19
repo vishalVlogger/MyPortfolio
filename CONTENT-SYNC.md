@@ -45,3 +45,25 @@ The middleware does not run in production builds. No hosted content or local
 database records are modified by this change. Unsetting the origin intentionally
 restores the independent local database behavior. Restart development after changing
 environment configuration.
+
+## Publishing source and UI changes
+
+Content and source changes use different release paths:
+
+- Content edited through **Edit site → Save & publish** is validated by the
+  hosted API and written directly to the production D1 record.
+- React, CSS, API, dependency, and configuration changes require a new hosted
+  site version. They are not published by the development server.
+
+Before publishing source changes, run:
+
+    npm run verify
+
+This command runs lint, the complete test suite, and the production build in
+sequence. Publish the validated source through the Sites deployment workflow so
+the production D1 binding and hosted secrets are injected correctly.
+
+Do not deploy with the generated dist/server/wrangler.json. Its local D1
+configuration deliberately uses a placeholder database ID and is suitable for
+local runtime testing only. Also avoid automatic deploy-on-save: incomplete
+local edits must never be pushed directly to the public portfolio.

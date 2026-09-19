@@ -11,6 +11,7 @@
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "verify": "npm run lint && npm test && npm run build",
     "format": "oxfmt",
     "db:generate": "drizzle-kit generate"
   },
