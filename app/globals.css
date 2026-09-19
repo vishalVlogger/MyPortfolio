@@ -1178,9 +1178,9 @@ main {
 }
 
 /* Currently learning section */
-.learning {
+.skills-learning {
   padding: 1.75rem 2rem;
-  margin-block: 0 3rem;
+  margin-top: 1.5rem;
   background: color-mix(in srgb, var(--card) 85%, transparent);
   border: 1px solid var(--line);
   border-radius: 1.1rem;
@@ -1453,15 +1453,74 @@ main {
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4) !important;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent)
+    transparent;
+  scrollbar-width: thin;
+}
+
+.quickscan-dialog::-webkit-scrollbar {
+  width: 8px;
+}
+
+.quickscan-dialog::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  background-clip: padding-box;
 }
 
 .quickscan-header {
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 0 2.5rem 0.85rem 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 1rem;
+  padding: 0 0 0.85rem;
   border-bottom: 1px solid var(--line);
   background: var(--card);
+}
+
+.quickscan-header-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.quickscan-close {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  place-items: center;
+  margin-top: -0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.quickscan-close:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--foreground);
+}
+
+.quickscan-close:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.quickscan-close svg {
+  width: 18px;
+  height: 18px;
 }
 
 .quickscan-hero {
@@ -1530,6 +1589,11 @@ main {
 
 .quickscan-section {
   margin-top: 1.25rem;
+}
+
+.quickscan-section + .quickscan-section {
+  padding-top: 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
 }
 
 .quickscan-section h4 {
@@ -1935,11 +1999,18 @@ main {
   animation: pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
-.learning h2 {
+.skills-learning h3 {
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0;
+}
+
+.skills-learning p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .learning-list {
@@ -2481,8 +2552,7 @@ footer a:hover {
   .hero-stats {
     grid-template-columns: repeat(3, 1fr);
   }
-  .learning {
-    width: min(1000px, calc(100% - 2.5rem));
+  .skills-learning {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -2562,6 +2632,38 @@ footer a:hover {
   .quickscan-dialog {
     width: calc(100vw - 1rem) !important;
     max-height: 88dvh;
+    padding: 0.85rem;
+  }
+  .quickscan-header {
+    gap: 0.75rem;
+  }
+  .quickscan-close {
+    width: 42px;
+    height: 42px;
+    margin-top: -0.2rem;
+  }
+  .quickscan-hero {
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+  .quickscan-portrait {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.8rem;
+  }
+  .quickscan-badge-row {
+    margin-top: 0.7rem;
+  }
+  .quickscan-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .quickscan-actions .primary-link {
+    grid-column: 1 / -1;
+  }
+  .quickscan-actions > * {
+    justify-content: center;
+    min-height: 44px;
   }
   .skill-grid,
   .project-grid {

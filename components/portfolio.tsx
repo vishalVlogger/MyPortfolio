@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   useEffect,
@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
-} from 'react';
+} from "react";
 import {
   ArrowUpRight,
   Award,
@@ -39,15 +39,16 @@ import {
   Wrench,
   X,
   Zap,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
@@ -55,24 +56,24 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@/components/ui/sheet';
-import { defaultPortfolio, type PortfolioData } from '@/lib/portfolio';
-import { ContactForm } from '@/components/contact-form';
+} from "@/components/ui/sheet";
+import { defaultPortfolio, type PortfolioData } from "@/lib/portfolio";
+import { ContactForm } from "@/components/contact-form";
 
 const nav = [
-  'About',
-  'Experience',
-  'Skills',
-  'Projects',
-  'Education',
-  'Certifications',
-  'Testimonials',
-  'Contact',
+  "About",
+  "Experience",
+  "Skills",
+  "Projects",
+  "Education",
+  "Certifications",
+  "Testimonials",
+  "Contact",
 ];
-const accents = ['#c7ff4a', '#70a5ff', '#ff8b6a', '#d6a7ff', '#6de2c5'];
+const accents = ["#c7ff4a", "#70a5ff", "#ff8b6a", "#d6a7ff", "#6de2c5"];
 
 function normalizeUrl(value: string) {
-  return value.trim().replace(/\/$/, '').toLowerCase();
+  return value.trim().replace(/\/$/, "").toLowerCase();
 }
 
 function isGitHubRepository(value: string) {
@@ -80,8 +81,8 @@ function isGitHubRepository(value: string) {
   try {
     const url = new URL(value);
     return (
-      url.hostname === 'github.com' &&
-      url.pathname.split('/').filter(Boolean).length >= 2
+      url.hostname === "github.com" &&
+      url.pathname.split("/").filter(Boolean).length >= 2
     );
   } catch {
     return false;
@@ -91,7 +92,7 @@ function isGitHubRepository(value: string) {
 function isLiveProject(value: string) {
   if (!value) return false;
   try {
-    return new URL(value).hostname !== 'github.com';
+    return new URL(value).hostname !== "github.com";
   } catch {
     return false;
   }
@@ -99,9 +100,9 @@ function isLiveProject(value: string) {
 
 function upgradeLegacyContent(content: PortfolioData): PortfolioData {
   const legacyExperience =
-    content.experience[0]?.company === 'Relisoft Technologies' &&
+    content.experience[0]?.company === "Relisoft Technologies" &&
     content.experience[0]?.bullets[0]?.startsWith(
-      'Contributing to the modernisation',
+      "Contributing to the modernisation",
     );
   const ownerLinkedIn = normalizeUrl(content.hero.linkedin);
 
@@ -110,16 +111,16 @@ function upgradeLegacyContent(content: PortfolioData): PortfolioData {
     hero: {
       ...content.hero,
       role:
-        content.hero.role === 'Software Developer' ||
-        content.hero.role === 'Salesforce & .NET Develope'
+        content.hero.role === "Software Developer" ||
+        content.hero.role === "Salesforce & .NET Develope"
           ? defaultPortfolio.hero.role
           : content.hero.role,
       tagline: content.hero.tagline.startsWith(
-        'Building scalable business applications',
+        "Building scalable business applications",
       )
         ? defaultPortfolio.hero.tagline
         : content.hero.tagline,
-      bio: content.hero.bio.startsWith('Software Developer focused on')
+      bio: content.hero.bio.startsWith("Software Developer focused on")
         ? defaultPortfolio.hero.bio
         : content.hero.bio,
       availability: /Open to Salesforce.*Gen\s*AI/i.test(
@@ -137,16 +138,14 @@ function upgradeLegacyContent(content: PortfolioData): PortfolioData {
       : content.experience,
     projects: content.projects.map((project) => ({
       ...project,
-      liveUrl: isLiveProject(project.liveUrl) ? project.liveUrl : '',
-      githubUrl: isGitHubRepository(project.githubUrl)
-        ? project.githubUrl
-        : '',
+      liveUrl: isLiveProject(project.liveUrl) ? project.liveUrl : "",
+      githubUrl: isGitHubRepository(project.githubUrl) ? project.githubUrl : "",
     })),
     testimonials: (content.testimonials ?? []).filter(
       (testimonial) =>
         !(
-          testimonial.name.trim().toLowerCase() === 'engineering lead' &&
-          normalizeUrl(testimonial.linkedInUrl ?? '') === ownerLinkedIn
+          testimonial.name.trim().toLowerCase() === "engineering lead" &&
+          normalizeUrl(testimonial.linkedInUrl ?? "") === ownerLinkedIn
         ),
     ),
     contact: {
@@ -165,31 +164,31 @@ function trackConversion(name: string) {
     dataLayer?: Array<Record<string, string>>;
     zaraz?: { track?: (event: string, properties?: object) => void };
   };
-  analyticsWindow.dataLayer?.push({ event: 'portfolio_conversion', name });
-  analyticsWindow.zaraz?.track?.('portfolio_conversion', { name });
+  analyticsWindow.dataLayer?.push({ event: "portfolio_conversion", name });
+  analyticsWindow.zaraz?.track?.("portfolio_conversion", { name });
 }
 
 function getCategoryIcon(cat: string) {
   const lower = cat.toLowerCase();
-  if (lower.includes('lang') || lower.includes('code')) return <Code2 />;
+  if (lower.includes("lang") || lower.includes("code")) return <Code2 />;
   if (
-    lower.includes('frame') ||
-    lower.includes('librar') ||
-    lower.includes('stack')
+    lower.includes("frame") ||
+    lower.includes("librar") ||
+    lower.includes("stack")
   )
     return <Layers />;
   if (
-    lower.includes('tool') ||
-    lower.includes('dev') ||
-    lower.includes('cloud') ||
-    lower.includes('infra')
+    lower.includes("tool") ||
+    lower.includes("dev") ||
+    lower.includes("cloud") ||
+    lower.includes("infra")
   )
     return <Wrench />;
   if (
-    lower.includes('style') ||
-    lower.includes('work') ||
-    lower.includes('soft') ||
-    lower.includes('mind')
+    lower.includes("style") ||
+    lower.includes("work") ||
+    lower.includes("soft") ||
+    lower.includes("mind")
   )
     return <Sparkles />;
   return <Zap />;
@@ -211,7 +210,7 @@ function parseBullets(text: string): string[] {
       .map((p) => p.trim())
       .filter(Boolean);
   }
-  return points.map((p) => p.replace(/\s*\n\s*/g, ' '));
+  return points.map((p) => p.replace(/\s*\n\s*/g, " "));
 }
 
 function Field({
@@ -256,7 +255,7 @@ function ListField({
     <label className="editor-field">
       <span>{label}</span>
       <input
-        value={draft ?? items.join(', ')}
+        value={draft ?? items.join(", ")}
         onFocus={(event) => setDraft(event.currentTarget.value)}
         onChange={(event) => {
           const text = event.currentTarget.value;
@@ -264,7 +263,7 @@ function ListField({
           onChange([
             ...new Set(
               text
-                .split(',')
+                .split(",")
                 .map((item) => item.trim())
                 .filter(Boolean),
             ),
@@ -279,20 +278,20 @@ function ListField({
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     if (file.size > 8 * 1024 * 1024) {
-      reject(new Error('Image is larger than 8 MB.'));
+      reject(new Error("Image is larger than 8 MB."));
       return;
     }
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      reject(new Error('Choose a JPEG, PNG, or WebP image.'));
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      reject(new Error("Choose a JPEG, PNG, or WebP image."));
       return;
     }
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Failed to read the image.'));
+    reader.onerror = () => reject(new Error("Failed to read the image."));
     reader.onload = () => {
       const img = new window.Image();
-      img.onerror = () => reject(new Error('The selected image is invalid.'));
+      img.onerror = () => reject(new Error("The selected image is invalid."));
       img.onload = () => {
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         const maxDim = 600;
         let { width, height } = img;
         if (width > maxDim || height > maxDim) {
@@ -306,15 +305,15 @@ function compressImage(file: File): Promise<string> {
         }
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (!ctx) {
           resolve(reader.result as string);
           return;
         }
         ctx.drawImage(img, 0, 0, width, height);
-        const result = canvas.toDataURL('image/jpeg', 0.82);
+        const result = canvas.toDataURL("image/jpeg", 0.82);
         if (result.length > 900_000) {
-          reject(new Error('The compressed image is still too large.'));
+          reject(new Error("The compressed image is still too large."));
           return;
         }
         resolve(result);
@@ -327,13 +326,13 @@ function compressImage(file: File): Promise<string> {
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (file.type !== 'application/pdf') {
-      reject(new Error('Choose a PDF document.'));
+    if (file.type !== "application/pdf") {
+      reject(new Error("Choose a PDF document."));
       return;
     }
     if (file.size > 900_000) {
       reject(
-        new Error('PDF is larger than 900 KB. Link to a hosted PDF instead.'),
+        new Error("PDF is larger than 900 KB. Link to a hosted PDF instead."),
       );
       return;
     }
@@ -359,14 +358,14 @@ function FileUploadField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
 
-  const isDataUrl = value?.startsWith('data:');
+  const isDataUrl = value?.startsWith("data:");
   const isImage =
     preview ||
-    value?.startsWith('data:image') ||
-    /\.(png|jpe?g|gif|webp|svg)$/i.test(value ?? '');
+    value?.startsWith("data:image") ||
+    /\.(png|jpe?g|gif|webp|svg)$/i.test(value ?? "");
 
   const displayInfo = (() => {
     if (!value) return null;
@@ -376,14 +375,14 @@ function FileUploadField({
         ? `Uploaded image (~${approxKb} KB)`
         : `Uploaded document (~${approxKb} KB)`;
     }
-    return value.length > 35 ? '…' + value.slice(-32) : value;
+    return value.length > 35 ? "…" + value.slice(-32) : value;
   })();
 
   async function handleFile(file: File) {
     setBusy(true);
-    setError('');
+    setError("");
     try {
-      if (isImage || file.type.startsWith('image/')) {
+      if (isImage || file.type.startsWith("image/")) {
         const compressed = await compressImage(file);
         onChange(compressed);
       } else {
@@ -391,7 +390,7 @@ function FileUploadField({
         onChange(dataUrl);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to read file.');
+      setError(err instanceof Error ? err.message : "Failed to read file.");
     } finally {
       setBusy(false);
     }
@@ -401,9 +400,9 @@ function FileUploadField({
     <div className="editor-field">
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
         <span>{label}</span>
@@ -412,7 +411,7 @@ function FileUploadField({
           className="upload-toggle"
           onClick={() => setShowUrlInput(!showUrlInput)}
         >
-          {showUrlInput ? 'Use file upload' : 'Paste URL instead'}
+          {showUrlInput ? "Use file upload" : "Paste URL instead"}
         </button>
       </div>
 
@@ -420,11 +419,11 @@ function FileUploadField({
         ref={inputRef}
         type="file"
         accept={accept}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) void handleFile(f);
-          e.target.value = '';
+          e.target.value = "";
         }}
       />
 
@@ -450,7 +449,7 @@ function FileUploadField({
               onClick={() => inputRef.current?.click()}
               disabled={busy}
             >
-              {busy ? 'Processing…' : value ? 'Replace file' : 'Choose file'}
+              {busy ? "Processing…" : value ? "Replace file" : "Choose file"}
             </button>
             {displayInfo && (
               <span className="upload-filename" title={displayInfo}>
@@ -462,8 +461,8 @@ function FileUploadField({
                 type="button"
                 className="upload-clear"
                 onClick={() => {
-                  onChange('');
-                  setError('');
+                  onChange("");
+                  setError("");
                 }}
                 aria-label="Remove file"
               >
@@ -494,7 +493,7 @@ function Editor({
   saved: boolean;
   error: string;
 }) {
-  const hero = (key: keyof PortfolioData['hero'], value: string) =>
+  const hero = (key: keyof PortfolioData["hero"], value: string) =>
     setData({ ...data, hero: { ...data.hero, [key]: value } });
   return (
     <SheetContent className="editor-panel" side="right">
@@ -511,61 +510,61 @@ function Editor({
             <Field
               label="Name"
               value={data.hero.name}
-              onChange={(v) => hero('name', v)}
+              onChange={(v) => hero("name", v)}
             />
             <Field
               label="Role"
               value={data.hero.role}
-              onChange={(v) => hero('role', v)}
+              onChange={(v) => hero("role", v)}
             />
             <Field
               label="Tagline"
               value={data.hero.tagline}
-              onChange={(v) => hero('tagline', v)}
+              onChange={(v) => hero("tagline", v)}
               multiline
             />
             <Field
               label="Bio"
               value={data.hero.bio}
-              onChange={(v) => hero('bio', v)}
+              onChange={(v) => hero("bio", v)}
               multiline
             />
             <Field
               label="Location"
               value={data.hero.location}
-              onChange={(v) => hero('location', v)}
+              onChange={(v) => hero("location", v)}
             />
             <Field
               label="Availability"
               value={data.hero.availability}
-              onChange={(v) => hero('availability', v)}
+              onChange={(v) => hero("availability", v)}
             />
             <FileUploadField
               label="Photo"
               accept="image/jpeg,image/png,image/webp"
               value={data.hero.photoUrl}
-              onChange={(v) => hero('photoUrl', v)}
+              onChange={(v) => hero("photoUrl", v)}
               preview
             />
             <Field
               label="GitHub URL"
               value={data.hero.github}
-              onChange={(v) => hero('github', v)}
+              onChange={(v) => hero("github", v)}
             />
             <Field
               label="LinkedIn URL"
               value={data.hero.linkedin}
-              onChange={(v) => hero('linkedin', v)}
+              onChange={(v) => hero("linkedin", v)}
             />
             <Field
               label="Email"
               value={data.hero.email}
-              onChange={(v) => hero('email', v)}
+              onChange={(v) => hero("email", v)}
             />
             <Field
               label="Calendar / Meeting link (e.g. Cal.com or Calendly)"
-              value={data.hero.calendarUrl ?? ''}
-              onChange={(v) => hero('calendarUrl', v)}
+              value={data.hero.calendarUrl ?? ""}
+              onChange={(v) => hero("calendarUrl", v)}
             />
           </div>
         </details>
@@ -615,11 +614,11 @@ function Editor({
                 />
                 <Field
                   label="Impact (one per line)"
-                  value={item.bullets.join('\n')}
+                  value={item.bullets.join("\n")}
                   multiline
                   onChange={(v) => {
                     const a = [...data.experience];
-                    a[i] = { ...item, bullets: v.split('\n') };
+                    a[i] = { ...item, bullets: v.split("\n") };
                     setData({ ...data, experience: a });
                   }}
                 />
@@ -633,10 +632,10 @@ function Editor({
                   experience: [
                     ...data.experience,
                     {
-                      company: 'Company',
-                      title: 'Role',
-                      dates: 'Year — Year',
-                      bullets: ['Describe your impact.'],
+                      company: "Company",
+                      title: "Role",
+                      dates: "Year — Year",
+                      bullets: ["Describe your impact."],
                     },
                   ],
                 })
@@ -690,7 +689,7 @@ function Editor({
                   ...data,
                   skills: [
                     ...data.skills,
-                    { category: 'Category', items: ['Skill'] },
+                    { category: "Category", items: ["Skill"] },
                   ],
                 })
               }
@@ -765,7 +764,7 @@ function Editor({
                 <FileUploadField
                   label="Screenshot / Mockup"
                   accept="image/jpeg,image/png,image/webp"
-                  value={project.imageUrl ?? ''}
+                  value={project.imageUrl ?? ""}
                   onChange={(v) => {
                     const a = [...data.projects];
                     a[i] = { ...project, imageUrl: v };
@@ -795,13 +794,13 @@ function Editor({
                   projects: [
                     ...data.projects,
                     {
-                      title: 'New project',
-                      description: 'What it does and why it matters.',
-                      stack: ['React'],
-                      liveUrl: 'https://example.com',
-                      githubUrl: 'https://github.com/',
+                      title: "New project",
+                      description: "What it does and why it matters.",
+                      stack: ["React"],
+                      liveUrl: "https://example.com",
+                      githubUrl: "https://github.com/",
                       accent: accents[data.projects.length % accents.length],
-                      imageUrl: '',
+                      imageUrl: "",
                     },
                   ],
                 })
@@ -857,7 +856,7 @@ function Editor({
                 />
                 <Field
                   label="Verification URL"
-                  value={cert.credentialUrl ?? ''}
+                  value={cert.credentialUrl ?? ""}
                   onChange={(v) => {
                     const list = [...(data.certifications ?? [])];
                     list[i] = { ...cert, credentialUrl: v };
@@ -874,10 +873,10 @@ function Editor({
                   certifications: [
                     ...(data.certifications ?? []),
                     {
-                      name: 'New Certification',
-                      issuer: 'Issuer (e.g. Salesforce, AWS)',
-                      date: '2024',
-                      credentialUrl: '',
+                      name: "New Certification",
+                      issuer: "Issuer (e.g. Salesforce, AWS)",
+                      date: "2024",
+                      credentialUrl: "",
                     },
                   ],
                 })
@@ -933,7 +932,7 @@ function Editor({
                 />
                 <Field
                   label="Details / Highlights"
-                  value={edu.details ?? ''}
+                  value={edu.details ?? ""}
                   multiline
                   onChange={(v) => {
                     const list = [...(data.education ?? [])];
@@ -951,10 +950,10 @@ function Editor({
                   education: [
                     ...(data.education ?? []),
                     {
-                      institution: 'University Name',
-                      degree: 'Degree / Course',
-                      dates: '2020 — 2024',
-                      details: '',
+                      institution: "University Name",
+                      degree: "Degree / Course",
+                      dates: "2020 — 2024",
+                      details: "",
                     },
                   ],
                 })
@@ -1020,7 +1019,7 @@ function Editor({
                 />
                 <Field
                   label="LinkedIn Profile URL"
-                  value={test.linkedInUrl ?? ''}
+                  value={test.linkedInUrl ?? ""}
                   onChange={(v) => {
                     const list = [...(data.testimonials ?? [])];
                     list[i] = { ...test, linkedInUrl: v };
@@ -1030,7 +1029,7 @@ function Editor({
                 <FileUploadField
                   label="Photo / Avatar (optional)"
                   accept="image/jpeg,image/png,image/webp"
-                  value={test.avatarUrl ?? ''}
+                  value={test.avatarUrl ?? ""}
                   onChange={(v) => {
                     const list = [...(data.testimonials ?? [])];
                     list[i] = { ...test, avatarUrl: v };
@@ -1048,13 +1047,13 @@ function Editor({
                   testimonials: [
                     ...(data.testimonials ?? []),
                     {
-                      name: 'Colleague Name',
-                      role: 'Senior Engineering Manager',
-                      company: 'Company Name',
+                      name: "Colleague Name",
+                      role: "Senior Engineering Manager",
+                      company: "Company Name",
                       quote:
-                        'Describe how you contributed and delivered results with high ownership.',
-                      linkedInUrl: 'https://linkedin.com',
-                      avatarUrl: '',
+                        "Describe how you contributed and delivered results with high ownership.",
+                      linkedInUrl: "https://linkedin.com",
+                      avatarUrl: "",
                     },
                   ],
                 })
@@ -1081,7 +1080,7 @@ function Editor({
             />
             <Field
               label="Receive contact messages at"
-              value={data.contact.email ?? ''}
+              value={data.contact.email ?? ""}
               onChange={(email) =>
                 setData({ ...data, contact: { ...data.contact, email } })
               }
@@ -1108,7 +1107,7 @@ function Editor({
         {error && <p role="alert">{error}</p>}
         <Button onClick={onSave} disabled={saving}>
           {saved ? <Check /> : <Save />}
-          {saving ? 'Saving…' : saved ? 'Saved' : 'Save & publish'}
+          {saving ? "Saving…" : saved ? "Saved" : "Save & publish"}
         </Button>
       </div>
     </SheetContent>
@@ -1120,20 +1119,20 @@ export function Portfolio() {
   const [loading, setLoading] = useState(true);
   const [dark, setDark] = useState(true);
   const [menu, setMenu] = useState(false);
-  const [activeSection, setActiveSection] = useState('about');
+  const [activeSection, setActiveSection] = useState("about");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
-  const [saveError, setSaveError] = useState('');
-  const [editorNotice, setEditorNotice] = useState('');
+  const [saveError, setSaveError] = useState("");
+  const [editorNotice, setEditorNotice] = useState("");
   const [copied, setCopied] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showTopBtn, setShowTopBtn] = useState(false);
-  const [selectedTag, setSelectedTag] = useState('All');
-  const csrfToken = useRef('');
-  const [loadError, setLoadError] = useState('');
+  const [selectedTag, setSelectedTag] = useState("All");
+  const csrfToken = useRef("");
+  const [loadError, setLoadError] = useState("");
   const [hasContent, setHasContent] = useState(true);
-  const lastLoaded = useRef('');
+  const lastLoaded = useRef("");
   const dataRef = useRef(data);
 
   useEffect(() => {
@@ -1146,61 +1145,61 @@ export function Portfolio() {
     if (!context?.registerTool) return;
     const lifecycle = new AbortController();
     const profileFields = [
-      'name',
-      'role',
-      'tagline',
-      'bio',
-      'location',
-      'availability',
-      'photoUrl',
-      'github',
-      'linkedin',
-      'email',
+      "name",
+      "role",
+      "tagline",
+      "bio",
+      "location",
+      "availability",
+      "photoUrl",
+      "github",
+      "linkedin",
+      "email",
     ] as const;
     void Promise.resolve(
       context.registerTool(
         {
-          name: 'update_portfolio_profile',
-          title: 'Update portfolio profile',
+          name: "update_portfolio_profile",
+          title: "Update portfolio profile",
           description:
-            'Update one or more hero/profile fields and publish them to the visible portfolio.',
+            "Update one or more hero/profile fields and publish them to the visible portfolio.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: Object.fromEntries(
-              profileFields.map((key) => [key, { type: 'string' }]),
+              profileFields.map((key) => [key, { type: "string" }]),
             ),
             additionalProperties: false,
           },
           annotations: { readOnlyHint: false, untrustedContentHint: false },
           async execute(input: unknown) {
-            if (!input || typeof input !== 'object' || Array.isArray(input))
-              throw new Error('Provide at least one valid profile field.');
+            if (!input || typeof input !== "object" || Array.isArray(input))
+              throw new Error("Provide at least one valid profile field.");
             const update = Object.fromEntries(
               Object.entries(input).filter(
                 ([key, value]) =>
                   profileFields.includes(
                     key as (typeof profileFields)[number],
-                  ) && typeof value === 'string',
+                  ) && typeof value === "string",
               ),
             );
             if (!Object.keys(update).length)
-              throw new Error('Provide at least one valid profile field.');
+              throw new Error("Provide at least one valid profile field.");
             const next = {
               ...dataRef.current,
               hero: { ...dataRef.current.hero, ...update },
             };
-            const response = await fetch('/api/content', {
-              method: 'PUT',
+            const response = await fetch("/api/content", {
+              method: "PUT",
               headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
                 ...(csrfToken.current
-                  ? { 'x-portfolio-csrf': csrfToken.current }
+                  ? { "x-portfolio-csrf": csrfToken.current }
                   : {}),
               },
               body: JSON.stringify(next),
             });
             if (!response.ok)
-              throw new Error('The profile could not be saved.');
+              throw new Error("The profile could not be saved.");
             lastLoaded.current = JSON.stringify(next);
             dataRef.current = next;
             setData(next);
@@ -1214,10 +1213,10 @@ export function Portfolio() {
   }, [canEdit]);
 
   useEffect(() => {
-    const theme = localStorage.getItem('portfolio-theme');
-    const isDark = theme ? theme === 'dark' : true;
+    const theme = localStorage.getItem("portfolio-theme");
+    const isDark = theme ? theme === "dark" : true;
     queueMicrotask(() => setDark(isDark));
-    document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.classList.toggle("dark", isDark);
     let active = true;
     let pending = false;
     const refresh = async () => {
@@ -1231,11 +1230,11 @@ export function Portfolio() {
       pending = true;
       try {
         const [contentResponse, sessionResponse] = await Promise.all([
-          fetch('/api/content', { cache: 'no-store' }),
-          fetch('/api/session', { cache: 'no-store' }),
+          fetch("/api/content", { cache: "no-store" }),
+          fetch("/api/session", { cache: "no-store" }),
         ]);
         if (!contentResponse.ok || !sessionResponse.ok)
-          throw new Error('Connection failed');
+          throw new Error("Connection failed");
         const content = (await contentResponse.json()) as PortfolioData;
         const session = (await sessionResponse.json()) as {
           canEdit: boolean;
@@ -1243,7 +1242,7 @@ export function Portfolio() {
           editorNotice?: string;
         };
         if (!content?.hero?.name || !Array.isArray(content.projects))
-          throw new Error('Invalid content');
+          throw new Error("Invalid content");
         if (!active) return;
         // A user may have started editing while the request was in flight.
         if (
@@ -1259,7 +1258,7 @@ export function Portfolio() {
             calendarUrl:
               content.hero?.calendarUrl ??
               defaultPortfolio.hero.calendarUrl ??
-              '',
+              "",
           },
           education: content.education ?? defaultPortfolio.education ?? [],
           certifications:
@@ -1272,14 +1271,14 @@ export function Portfolio() {
         dataRef.current = next;
         setData(next);
         setCanEdit(session.canEdit);
-        csrfToken.current = session.csrfToken ?? '';
-        setEditorNotice(session.editorNotice ?? '');
+        csrfToken.current = session.csrfToken ?? "";
+        setEditorNotice(session.editorNotice ?? "");
         setHasContent(true);
-        setLoadError('');
+        setLoadError("");
       } catch {
         if (active)
           setLoadError(
-            'Could not load the latest portfolio. Check your connection, then retry.',
+            "Could not load the latest portfolio. Check your connection, then retry.",
           );
       } finally {
         pending = false;
@@ -1287,10 +1286,10 @@ export function Portfolio() {
       }
     };
     void refresh();
-    window.addEventListener('focus', refresh);
+    window.addEventListener("focus", refresh);
     return () => {
       active = false;
-      window.removeEventListener('focus', refresh);
+      window.removeEventListener("focus", refresh);
     };
   }, []);
 
@@ -1301,25 +1300,25 @@ export function Portfolio() {
       setScrollProgress(total > 0 ? (window.scrollY / total) * 100 : 0);
       setShowTopBtn(window.scrollY > 320);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // IntersectionObserver for staggered scroll reveals
   useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return;
+    if (typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
+            entry.target.classList.add("is-visible");
           }
         });
       },
-      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' },
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" },
     );
-    const elements = document.querySelectorAll('.reveal-fade');
+    const elements = document.querySelectorAll(".reveal-fade");
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [data, selectedTag, hasContent]);
@@ -1336,7 +1335,7 @@ export function Portfolio() {
               (document.getElementById(id)?.getBoundingClientRect().top ??
                 Infinity) <= 150,
           )
-          .at(-1) ?? 'about';
+          .at(-1) ?? "about";
       setActiveSection(current);
       frame = 0;
     };
@@ -1344,9 +1343,9 @@ export function Portfolio() {
       if (!frame) frame = requestAnimationFrame(update);
     };
     onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(frame);
     };
   }, []);
@@ -1362,15 +1361,15 @@ export function Portfolio() {
         .filter(Boolean)
         .slice(0, 2)
         .map((n) => n[0])
-        .join('')
+        .join("")
         .toUpperCase(),
     [data.hero.name],
   );
   const toggleTheme = () => {
     const next = !dark;
     setDark(next);
-    document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('portfolio-theme', next ? 'dark' : 'light');
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("portfolio-theme", next ? "dark" : "light");
   };
 
   const copyEmail = async () => {
@@ -1388,15 +1387,15 @@ export function Portfolio() {
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     data.projects.forEach((p) => p.stack.forEach((s) => tags.add(s)));
-    return ['All', ...Array.from(tags)];
+    return ["All", ...Array.from(tags)];
   }, [data.projects]);
 
   const filteredProjects = useMemo(() => {
-    if (selectedTag === 'All') return data.projects;
+    if (selectedTag === "All") return data.projects;
     return data.projects.filter((p) => p.stack.includes(selectedTag));
   }, [data.projects, selectedTag]);
 
-  const isDataResume = Boolean(data.resumeUrl?.startsWith('data:'));
+  const isDataResume = Boolean(data.resumeUrl?.startsWith("data:"));
 
   const [quickScanOpen, setQuickScanOpen] = useState(false);
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
@@ -1416,29 +1415,29 @@ export function Portfolio() {
   const save = async () => {
     setSaving(true);
     setSaved(false);
-    setSaveError('');
+    setSaveError("");
     try {
       // Refresh the local CSRF token without replacing the user's unsaved draft.
-      const sessionResponse = await fetch('/api/session', {
-        cache: 'no-store',
+      const sessionResponse = await fetch("/api/session", {
+        cache: "no-store",
       });
       if (!sessionResponse.ok)
-        throw new Error('Cannot verify editor access. Please try again.');
+        throw new Error("Cannot verify editor access. Please try again.");
       const session = (await sessionResponse.json()) as {
         canEdit: boolean;
         csrfToken?: string;
       };
       if (!session.canEdit)
         throw new Error(
-          'Editing is locked. Check your owner connection; your draft has been kept.',
+          "Editing is locked. Check your owner connection; your draft has been kept.",
         );
-      csrfToken.current = session.csrfToken ?? '';
-      const response = await fetch('/api/content', {
-        method: 'PUT',
+      csrfToken.current = session.csrfToken ?? "";
+      const response = await fetch("/api/content", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...(csrfToken.current
-            ? { 'x-portfolio-csrf': csrfToken.current }
+            ? { "x-portfolio-csrf": csrfToken.current }
             : {}),
         },
         body: JSON.stringify(data),
@@ -1453,7 +1452,7 @@ export function Portfolio() {
         throw new Error(
           result.error ||
             (response.status === 413
-              ? 'File is too large. Please compress your resume PDF before saving.'
+              ? "File is too large. Please compress your resume PDF before saving."
               : `Save failed (${response.status}). Your draft has been kept.`),
         );
       }
@@ -1465,7 +1464,7 @@ export function Portfolio() {
       setSaveError(
         error instanceof Error
           ? error.message
-          : 'Unable to save. Your draft has been kept.',
+          : "Unable to save. Your draft has been kept.",
       );
     } finally {
       setSaving(false);
@@ -1475,7 +1474,7 @@ export function Portfolio() {
   if (!data?.hero?.name && loading)
     return (
       <main className="section" aria-busy={loading}>
-        <output>{loadError || 'Loading portfolio…'}</output>
+        <output>{loadError || "Loading portfolio…"}</output>
         {loadError && (
           <Button onClick={() => window.location.reload()}>Retry</Button>
         )}
@@ -1500,33 +1499,33 @@ export function Portfolio() {
 
       <header className="topbar">
         <a className="wordmark" href="#about">
-          <span>{initials || 'YN'}</span>
+          <span>{initials || "YN"}</span>
           {data.hero.name}
         </a>
         <nav
           id="main-navigation"
-          className={menu ? 'nav-links open' : 'nav-links'}
+          className={menu ? "nav-links open" : "nav-links"}
           aria-label="Main navigation"
         >
           {nav
             .filter(
               (item) =>
-                item !== 'Testimonials' || Boolean(data.testimonials?.length),
+                item !== "Testimonials" || Boolean(data.testimonials?.length),
             )
             .map((item) => (
-            <a
-              key={item}
-              href={`#${item.toLowerCase()}`}
-              aria-current={
-                activeSection === item.toLowerCase() ? 'location' : undefined
-              }
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') setMenu(false);
-              }}
-              onClick={() => setMenu(false)}
-            >
-              {item}
-            </a>
+              <a
+                key={item}
+                href={`#${item.toLowerCase()}`}
+                aria-current={
+                  activeSection === item.toLowerCase() ? "location" : undefined
+                }
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") setMenu(false);
+                }}
+                onClick={() => setMenu(false)}
+              >
+                {item}
+              </a>
             ))}
           <button
             type="button"
@@ -1592,7 +1591,7 @@ export function Portfolio() {
       <main
         id="main-content"
         tabIndex={-1}
-        className={loading ? 'loading-content' : ''}
+        className={loading ? "loading-content" : ""}
       >
         {editorNotice && (
           <p className="editor-notice">
@@ -1601,7 +1600,7 @@ export function Portfolio() {
         )}
         {loadError && (
           <p role="alert">
-            {loadError}{' '}
+            {loadError}{" "}
             <button onClick={() => window.location.reload()}>Retry</button>
           </p>
         )}
@@ -1633,10 +1632,10 @@ export function Portfolio() {
                 <img
                   src={data.hero.photoUrl}
                   alt={data.hero.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
-                <span>{initials || 'YN'}</span>
+                <span>{initials || "YN"}</span>
               )}
             </div>
             <div>
@@ -1694,12 +1693,12 @@ export function Portfolio() {
               </a>
               <button
                 type="button"
-                className={`copy-email-btn ${copied ? 'copied' : ''}`}
+                className={`copy-email-btn ${copied ? "copied" : ""}`}
                 onClick={copyEmail}
                 aria-label="Copy email address"
               >
                 {copied ? <Check /> : <Copy />}
-                <span>{copied ? 'Copied!' : 'Copy email'}</span>
+                <span>{copied ? "Copied!" : "Copy email"}</span>
               </button>
             </div>
           </div>
@@ -1708,19 +1707,19 @@ export function Portfolio() {
             <a
               className="primary-link"
               href="#projects"
-              onClick={() => trackConversion('view_projects')}
+              onClick={() => trackConversion("view_projects")}
             >
               View projects <ArrowUpRight />
             </a>
             <a
               className="secondary-link"
-              href={data.resumeUrl || '#'}
-              target={isDataResume ? undefined : '_blank'}
+              href={data.resumeUrl || "#"}
+              target={isDataResume ? undefined : "_blank"}
               rel="noreferrer"
-              download={isDataResume ? 'resume.pdf' : undefined}
-              onClick={() => trackConversion('download_resume')}
+              download={isDataResume ? "resume.pdf" : undefined}
+              onClick={() => trackConversion("download_resume")}
             >
-              Download résumé <Download />
+              Download Resume <Download />
             </a>
           </div>
         </section>
@@ -1790,12 +1789,31 @@ export function Portfolio() {
               </article>
             ))}
           </div>
+          {data.learning.length > 0 && (
+            <aside
+              className="skills-learning reveal-fade"
+              aria-labelledby="learning-heading"
+            >
+              <div className="learning-title-box">
+                <span className="learning-beacon" aria-hidden="true" />
+                <div>
+                  <h3 id="learning-heading">Currently exploring</h3>
+                  <p>In progress—not listed as established expertise.</p>
+                </div>
+              </div>
+              <div className="learning-list">
+                {data.learning.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+            </aside>
+          )}
         </section>
 
         <section className="section" id="projects">
           <div className="section-heading">
             <h2>
-              <Code2 /> Selected Projects
+              <Code2 /> Projects
             </h2>
           </div>
           <p className="section-subtitle">
@@ -1809,7 +1827,7 @@ export function Portfolio() {
                 <button
                   key={tag}
                   type="button"
-                  className={`filter-btn ${selectedTag === tag ? 'active' : ''}`}
+                  className={`filter-btn ${selectedTag === tag ? "active" : ""}`}
                   onClick={() => setSelectedTag(tag)}
                 >
                   {tag}
@@ -1823,7 +1841,7 @@ export function Portfolio() {
               <article
                 className="project-card spotlight-card reveal-fade"
                 key={`${project.title}-${i}`}
-                style={{ '--project-accent': project.accent } as CSSProperties}
+                style={{ "--project-accent": project.accent } as CSSProperties}
               >
                 {project.imageUrl && (
                   <div className="project-mockup">
@@ -1864,8 +1882,8 @@ export function Portfolio() {
                   const bullets = parseBullets(project.description);
                   if (
                     bullets.length > 1 ||
-                    project.description.trim().startsWith('-') ||
-                    project.description.trim().startsWith('•')
+                    project.description.trim().startsWith("-") ||
+                    project.description.trim().startsWith("•")
                   ) {
                     return (
                       <ul className="project-bullets">
@@ -1897,7 +1915,7 @@ export function Portfolio() {
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`${project.title} live site`}
-                        onClick={() => trackConversion('open_project_demo')}
+                        onClick={() => trackConversion("open_project_demo")}
                       >
                         View live demo <ArrowUpRight />
                       </a>
@@ -1908,7 +1926,7 @@ export function Portfolio() {
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`${project.title} GitHub`}
-                        onClick={() => trackConversion('open_project_code')}
+                        onClick={() => trackConversion("open_project_code")}
                       >
                         View source <GitFork />
                       </a>
@@ -2046,13 +2064,13 @@ export function Portfolio() {
                                 .split(/\s+/)
                                 .map((n) => n[0])
                                 .slice(0, 2)
-                                .join('')
+                                .join("")
                             )}
                           </div>
                           <div className="testimonial-author-info">
                             <h4>{currentTestimonial.name}</h4>
                             <p>
-                              {currentTestimonial.role} ·{' '}
+                              {currentTestimonial.role} ·{" "}
                               {currentTestimonial.company}
                             </p>
                           </div>
@@ -2081,7 +2099,7 @@ export function Portfolio() {
                       <button
                         key={idx}
                         type="button"
-                        className={`testimonial-dot ${activeTestimonial === idx ? 'active' : ''}`}
+                        className={`testimonial-dot ${activeTestimonial === idx ? "active" : ""}`}
                         onClick={() => setActiveTestimonial(idx)}
                         aria-label={`Go to recommendation ${idx + 1}`}
                       />
@@ -2122,18 +2140,6 @@ export function Portfolio() {
           </section>
         )}
 
-        <section className="learning section reveal-fade" id="learning">
-          <div className="learning-title-box">
-            <span className="learning-beacon" />
-            <h2>Currently learning</h2>
-          </div>
-          <div className="learning-list">
-            {data.learning.map((item) => (
-              <span key={item}>{item}</span>
-            ))}
-          </div>
-        </section>
-
         <section className="contact section reveal-fade" id="contact">
           <div className="contact-intro">
             <h2>{data.contact.heading}</h2>
@@ -2155,18 +2161,18 @@ export function Portfolio() {
               </a>
               <button
                 type="button"
-                className={`secondary-link ${copied ? 'copied' : ''}`}
+                className={`secondary-link ${copied ? "copied" : ""}`}
                 onClick={copyEmail}
               >
-                {copied ? <Check /> : <Copy />}{' '}
-                {copied ? 'Email copied!' : 'Copy email'}
+                {copied ? <Check /> : <Copy />}{" "}
+                {copied ? "Email copied!" : "Copy email"}
               </button>
               <a
                 className="secondary-link"
-                href={data.resumeUrl || '#'}
-                target={isDataResume ? undefined : '_blank'}
+                href={data.resumeUrl || "#"}
+                target={isDataResume ? undefined : "_blank"}
                 rel="noreferrer"
-                download={isDataResume ? 'resume.pdf' : undefined}
+                download={isDataResume ? "resume.pdf" : undefined}
               >
                 View Resume <Download />
               </a>
@@ -2182,12 +2188,26 @@ export function Portfolio() {
           ref={quickScanRef}
           initialFocus={quickScanRef}
           className="quickscan-dialog"
+          showCloseButton={false}
         >
           <DialogHeader className="quickscan-header">
-            <DialogTitle>Recruiter & HR Quick Scan</DialogTitle>
-            <DialogDescription>
-              Role fit, core capabilities, and project evidence at a glance.
-            </DialogDescription>
+            <div className="quickscan-header-copy">
+              <DialogTitle>Recruiter & HR Quick Scan</DialogTitle>
+              <DialogDescription>
+                Role fit, core capabilities, and project evidence at a glance.
+              </DialogDescription>
+            </div>
+            <DialogClose
+              render={
+                <button
+                  type="button"
+                  className="quickscan-close"
+                  aria-label="Close recruiter quick scan"
+                />
+              }
+            >
+              <X aria-hidden="true" />
+            </DialogClose>
           </DialogHeader>
 
           <div className="quickscan-hero">
@@ -2198,10 +2218,10 @@ export function Portfolio() {
               ) : (
                 <div
                   style={{
-                    display: 'grid',
-                    placeItems: 'center',
-                    height: '100%',
-                    fontWeight: 'bold',
+                    display: "grid",
+                    placeItems: "center",
+                    height: "100%",
+                    fontWeight: "bold",
                   }}
                 >
                   {initials}
@@ -2216,7 +2236,7 @@ export function Portfolio() {
                   <span
                     className="status-dot"
                     style={{ width: 6, height: 6 }}
-                  />{' '}
+                  />{" "}
                   {data.hero.availability}
                 </span>
                 <span className="quickscan-badge">📍 {data.hero.location}</span>
@@ -2229,8 +2249,8 @@ export function Portfolio() {
             <p
               style={{
                 margin: 0,
-                fontSize: '0.88rem',
-                color: 'var(--muted)',
+                fontSize: "0.88rem",
+                color: "var(--muted)",
                 lineHeight: 1.6,
               }}
             >
@@ -2256,18 +2276,18 @@ export function Portfolio() {
             <h4>Selected project evidence</h4>
             <ul
               style={{
-                margin: '0.4rem 0 0',
-                paddingLeft: '1.2rem',
-                fontSize: '0.86rem',
-                color: 'var(--muted)',
+                margin: "0.4rem 0 0",
+                paddingLeft: "1.2rem",
+                fontSize: "0.86rem",
+                color: "var(--muted)",
                 lineHeight: 1.6,
               }}
             >
               {data.projects.map((p) => (
-                <li key={p.title} style={{ marginBottom: '0.45rem' }}>
-                  <strong style={{ color: 'var(--foreground)' }}>
+                <li key={p.title} style={{ marginBottom: "0.45rem" }}>
+                  <strong style={{ color: "var(--foreground)" }}>
                     {p.title}
-                  </strong>{' '}
+                  </strong>{" "}
                   — {parseBullets(p.description)[0] || p.description}
                 </li>
               ))}
@@ -2279,17 +2299,17 @@ export function Portfolio() {
               type="button"
               className="primary-link"
               onClick={() => {
-                trackConversion('preview_resume');
+                trackConversion("preview_resume");
                 setQuickScanOpen(false);
                 setResumeModalOpen(true);
               }}
             >
-              <FileText /> Preview Full Résumé
+              <FileText /> Preview Full Resume
             </button>
             <a
               className="secondary-link"
               href={`mailto:${data.contact.email || data.hero.email}`}
-              onClick={() => trackConversion('email_from_quick_scan')}
+              onClick={() => trackConversion("email_from_quick_scan")}
             >
               <Mail /> Email directly
             </a>
@@ -2317,7 +2337,7 @@ export function Portfolio() {
       <Dialog open={resumeModalOpen} onOpenChange={setResumeModalOpen}>
         <DialogContent
           className="quickscan-dialog"
-          style={{ maxWidth: 780, width: 'min(780px, calc(100vw - 2rem))' }}
+          style={{ maxWidth: 780, width: "min(780px, calc(100vw - 2rem))" }}
         >
           <DialogHeader>
             <DialogTitle>Interactive Résumé Preview</DialogTitle>
@@ -2332,15 +2352,15 @@ export function Portfolio() {
               <iframe
                 src={data.resumeUrl}
                 title="Candidate Résumé Preview"
-                style={{ width: '100%', height: '100%', border: 'none' }}
+                style={{ width: "100%", height: "100%", border: "none" }}
               />
             ) : (
               <div
                 style={{
-                  display: 'grid',
-                  placeItems: 'center',
-                  height: '100%',
-                  color: 'var(--muted)',
+                  display: "grid",
+                  placeItems: "center",
+                  height: "100%",
+                  color: "var(--muted)",
                 }}
               >
                 No résumé has been uploaded yet.
@@ -2350,23 +2370,23 @@ export function Portfolio() {
 
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: '1rem',
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "1rem",
             }}
           >
-            <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
+            <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
               {isDataResume
-                ? 'Direct document upload'
-                : 'Hosted remote document'}
+                ? "Direct document upload"
+                : "Hosted remote document"}
             </span>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
               <a
                 className="primary-link"
-                href={data.resumeUrl || '#'}
-                download={isDataResume ? 'resume.pdf' : undefined}
-                target={isDataResume ? undefined : '_blank'}
+                href={data.resumeUrl || "#"}
+                download={isDataResume ? "resume.pdf" : undefined}
+                target={isDataResume ? undefined : "_blank"}
                 rel="noreferrer"
               >
                 <Download /> Download Copy
@@ -2391,14 +2411,14 @@ export function Portfolio() {
             <div className="booking-hero-card">
               <span className="booking-status-indicator" />
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>
+                <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700 }}>
                   Currently {data.hero.availability}
                 </h4>
                 <p
                   style={{
-                    margin: '0.2rem 0 0',
-                    fontSize: '0.82rem',
-                    color: 'var(--muted)',
+                    margin: "0.2rem 0 0",
+                    fontSize: "0.82rem",
+                    color: "var(--muted)",
                   }}
                 >
                   Typically replies within 24 hours · Fast turnaround
@@ -2424,7 +2444,7 @@ export function Portfolio() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <CalendarDays /> Book instant slot on calendar{' '}
+                  <CalendarDays /> Book instant slot on calendar{" "}
                   <ArrowUpRight />
                 </a>
               ) : (
@@ -2440,7 +2460,7 @@ export function Portfolio() {
                 className="booking-secondary-btn"
                 href={`mailto:${data.contact.email || data.hero.email}`}
               >
-                <Mail /> Send direct email:{' '}
+                <Mail /> Send direct email:{" "}
                 {data.contact.email || data.hero.email}
               </a>
 
@@ -2459,8 +2479,8 @@ export function Portfolio() {
 
       <button
         type="button"
-        className={`floating-top-btn ${showTopBtn ? 'visible' : ''}`}
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`floating-top-btn ${showTopBtn ? "visible" : ""}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="Scroll to top"
       >
         <ChevronUp />
