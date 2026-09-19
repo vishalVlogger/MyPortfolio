@@ -69,7 +69,7 @@ export const defaultPortfolio: PortfolioData = {
       "Modernising enterprise systems with Salesforce, ASP.NET Core, automation, and secure integrations.",
     bio: "Salesforce and .NET developer focused on business applications, workflow automation, API integrations, and maintainable replacements for legacy enterprise systems.",
     location: "Pune, Maharashtra, India",
-    availability: "Open to Salesforce, .NET and GenAI opportunities",
+    availability: "Open to Salesforce and GenAI opportunities",
     photoUrl: "/profile.jpg",
     github: "https://github.com/vishalVlogger",
     linkedin: "https://www.linkedin.com/in/vishal-patil03/",

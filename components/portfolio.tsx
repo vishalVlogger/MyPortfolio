@@ -71,6 +71,10 @@ const nav = [
   "Contact",
 ];
 const accents = ["#c7ff4a", "#70a5ff", "#ff8b6a", "#d6a7ff", "#6de2c5"];
+const legacyAvailabilityLabels = new Set([
+  "Open to Salesforce & Gen AI Opportunity",
+  "Open to Salesforce & Gen AI opportunities",
+]);
 
 function normalizeUrl(value: string) {
   return value.trim().replace(/\/$/, "").toLowerCase();
@@ -123,8 +127,8 @@ function upgradeLegacyContent(content: PortfolioData): PortfolioData {
       bio: content.hero.bio.startsWith("Software Developer focused on")
         ? defaultPortfolio.hero.bio
         : content.hero.bio,
-      availability: /Open to Salesforce.*Gen\s*AI/i.test(
-        content.hero.availability,
+      availability: legacyAvailabilityLabels.has(
+        content.hero.availability.trim(),
       )
         ? defaultPortfolio.hero.availability
         : content.hero.availability,
