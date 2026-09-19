@@ -63,13 +63,13 @@ export type PortfolioData = {
 
 export const defaultPortfolio: PortfolioData = {
   hero: {
-    name: "Vishal Patil",
-    role: "Software Developer",
+    name: "Vishal R. Patil",
+    role: "Salesforce & .NET Developer",
     tagline:
-      "Building scalable business applications, automation, and modern web solutions.",
-    bio: "Software Developer focused on Salesforce and ASP.NET, with hands-on experience building business applications, automation, integrations, and modernising legacy enterprise systems.",
+      "Modernising enterprise systems with Salesforce, ASP.NET Core, automation, and secure integrations.",
+    bio: "Salesforce and .NET developer focused on business applications, workflow automation, API integrations, and maintainable replacements for legacy enterprise systems.",
     location: "Pune, Maharashtra, India",
-    availability: "Open to Salesforce & Gen AI Opportunity",
+    availability: "Open to Salesforce, .NET and GenAI opportunities",
     photoUrl: "/profile.jpg",
     github: "https://github.com/vishalVlogger",
     linkedin: "https://www.linkedin.com/in/vishal-patil03/",
@@ -82,12 +82,12 @@ export const defaultPortfolio: PortfolioData = {
       title: "Software Developer",
       dates: "2026 — Present",
       bullets: [
-        "Contributing to the modernisation of enterprise applications by migrating legacy ASP.NET Web Forms systems to ASP.NET Core MVC.",
-        "Migrated legacy .aspx pages and code-behind logic into MVC controllers, Razor views, and modern application workflows.",
-        "Integrated existing SQL Server databases while preserving legacy business rules and application behaviour.",
-        "Implemented and improved authentication, session management, SMTP workflows, Excel exports, filtering, reporting, and responsive interfaces.",
-        "Diagnosed migration and compatibility issues while maintaining functional and UI parity with legacy enterprise applications.",
-        "Collaborated through Git and GitHub-based development workflows to manage changes, testing, and application modernisation.",
+        "Modernise legacy ASP.NET Web Forms applications into maintainable ASP.NET Core MVC workflows while preserving business-critical behaviour.",
+        "Translate code-behind logic into testable controllers, Razor views, and clearer separation of concerns.",
+        "Protect continuity by integrating existing SQL Server schemas and validating legacy business rules throughout migration.",
+        "Strengthen authentication, session handling, SMTP workflows, exports, filtering, reporting, and responsive usability.",
+        "Diagnose compatibility and migration defects before release, reducing regression risk for existing users.",
+        "Use Git and GitHub review workflows to make modernisation changes traceable and safer to ship.",
       ],
     },
   ],
@@ -113,16 +113,7 @@ export const defaultPortfolio: PortfolioData = {
       credentialUrl: "https://www.salesforce.com/trailblazer/vpatil248",
     },
   ],
-  testimonials: [
-    {
-      name: "Engineering Lead",
-      role: "Delivery Manager",
-      company: "Relisoft Technologies",
-      quote:
-        "Vishal possesses great technical aptitude across both enterprise .NET migrations and modern Salesforce ecosystems. Delivers reliably with great attention to detail.",
-      linkedInUrl: "https://www.linkedin.com/in/vishal-patil03/",
-    },
-  ],
+  testimonials: [],
   skills: [
     {
       category: "Salesforce",
@@ -170,7 +161,7 @@ export const defaultPortfolio: PortfolioData = {
         "SLDS",
       ],
       liveUrl: "https://abs-d2-dev-ed.develop.my.site.com/mealhunter/",
-      githubUrl: "https://github.com/vishalVlogger",
+      githubUrl: "",
       accent: "#c7ff4a",
     },
     {
@@ -185,8 +176,8 @@ export const defaultPortfolio: PortfolioData = {
         "Integration (REST)",
         "SLDS",
       ],
-      liveUrl: "https://github.com/vishalVlogger",
-      githubUrl: "https://github.com/vishalVlogger",
+      liveUrl: "",
+      githubUrl: "",
       accent: "#70a5ff",
     },
   ],
@@ -202,7 +193,7 @@ export const defaultPortfolio: PortfolioData = {
   resumeUrl: "/resume.pdf",
   contact: {
     heading: "Let's Build Something Valuable",
-    note: "I'm open to Salesforce, enterprise application development, and Gen AI opportunities. Feel free to connect or drop me a message.",
+    note: "I'm open to Salesforce, .NET, enterprise application development, and GenAI opportunities. Feel free to connect or send a message.",
     email: "vishal.patil362000@gmail.com",
   },
 };

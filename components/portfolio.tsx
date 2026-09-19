@@ -22,7 +22,6 @@ import {
   Copy,
   Download,
   ExternalLink,
-  Eye,
   FileText,
   GitFork,
   GraduationCap,
@@ -71,6 +70,104 @@ const nav = [
   'Contact',
 ];
 const accents = ['#c7ff4a', '#70a5ff', '#ff8b6a', '#d6a7ff', '#6de2c5'];
+
+function normalizeUrl(value: string) {
+  return value.trim().replace(/\/$/, '').toLowerCase();
+}
+
+function isGitHubRepository(value: string) {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.hostname === 'github.com' &&
+      url.pathname.split('/').filter(Boolean).length >= 2
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isLiveProject(value: string) {
+  if (!value) return false;
+  try {
+    return new URL(value).hostname !== 'github.com';
+  } catch {
+    return false;
+  }
+}
+
+function upgradeLegacyContent(content: PortfolioData): PortfolioData {
+  const legacyExperience =
+    content.experience[0]?.company === 'Relisoft Technologies' &&
+    content.experience[0]?.bullets[0]?.startsWith(
+      'Contributing to the modernisation',
+    );
+  const ownerLinkedIn = normalizeUrl(content.hero.linkedin);
+
+  return {
+    ...content,
+    hero: {
+      ...content.hero,
+      role:
+        content.hero.role === 'Software Developer' ||
+        content.hero.role === 'Salesforce & .NET Develope'
+          ? defaultPortfolio.hero.role
+          : content.hero.role,
+      tagline: content.hero.tagline.startsWith(
+        'Building scalable business applications',
+      )
+        ? defaultPortfolio.hero.tagline
+        : content.hero.tagline,
+      bio: content.hero.bio.startsWith('Software Developer focused on')
+        ? defaultPortfolio.hero.bio
+        : content.hero.bio,
+      availability: /Open to Salesforce.*Gen\s*AI/i.test(
+        content.hero.availability,
+      )
+        ? defaultPortfolio.hero.availability
+        : content.hero.availability,
+    },
+    experience: legacyExperience
+      ? content.experience.map((item, index) =>
+          index === 0
+            ? { ...item, bullets: defaultPortfolio.experience[0].bullets }
+            : item,
+        )
+      : content.experience,
+    projects: content.projects.map((project) => ({
+      ...project,
+      liveUrl: isLiveProject(project.liveUrl) ? project.liveUrl : '',
+      githubUrl: isGitHubRepository(project.githubUrl)
+        ? project.githubUrl
+        : '',
+    })),
+    testimonials: (content.testimonials ?? []).filter(
+      (testimonial) =>
+        !(
+          testimonial.name.trim().toLowerCase() === 'engineering lead' &&
+          normalizeUrl(testimonial.linkedInUrl ?? '') === ownerLinkedIn
+        ),
+    ),
+    contact: {
+      ...content.contact,
+      note: content.contact.note.startsWith(
+        "I'm open to Salesforce, enterprise application development",
+      )
+        ? defaultPortfolio.contact.note
+        : content.contact.note,
+    },
+  };
+}
+
+function trackConversion(name: string) {
+  const analyticsWindow = window as Window & {
+    dataLayer?: Array<Record<string, string>>;
+    zaraz?: { track?: (event: string, properties?: object) => void };
+  };
+  analyticsWindow.dataLayer?.push({ event: 'portfolio_conversion', name });
+  analyticsWindow.zaraz?.track?.('portfolio_conversion', { name });
+}
 
 function getCategoryIcon(cat: string) {
   const lower = cat.toLowerCase();
@@ -1154,7 +1251,7 @@ export function Portfolio() {
           JSON.stringify(dataRef.current) !== lastLoaded.current
         )
           return;
-        const next = {
+        const next = upgradeLegacyContent({
           ...content,
           hero: {
             ...defaultPortfolio.hero,
@@ -1170,7 +1267,7 @@ export function Portfolio() {
           testimonials:
             content.testimonials ?? defaultPortfolio.testimonials ?? [],
           contact: { ...defaultPortfolio.contact, ...content.contact },
-        };
+        });
         lastLoaded.current = JSON.stringify(next);
         dataRef.current = next;
         setData(next);
@@ -1299,17 +1396,22 @@ export function Portfolio() {
     return data.projects.filter((p) => p.stack.includes(selectedTag));
   }, [data.projects, selectedTag]);
 
-  const totalSkills = useMemo(
-    () => data.skills.reduce((sum, g) => sum + g.items.length, 0),
-    [data.skills],
-  );
-
   const isDataResume = Boolean(data.resumeUrl?.startsWith('data:'));
 
   const [quickScanOpen, setQuickScanOpen] = useState(false);
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const quickScanRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!quickScanOpen) return;
+    const resetScroll = window.setTimeout(() => {
+      quickScanRef.current?.focus({ preventScroll: true });
+      quickScanRef.current?.scrollTo({ top: 0 });
+    }, 0);
+    return () => window.clearTimeout(resetScroll);
+  }, [quickScanOpen]);
 
   const save = async () => {
     setSaving(true);
@@ -1406,7 +1508,12 @@ export function Portfolio() {
           className={menu ? 'nav-links open' : 'nav-links'}
           aria-label="Main navigation"
         >
-          {nav.map((item) => (
+          {nav
+            .filter(
+              (item) =>
+                item !== 'Testimonials' || Boolean(data.testimonials?.length),
+            )
+            .map((item) => (
             <a
               key={item}
               href={`#${item.toLowerCase()}`}
@@ -1420,7 +1527,17 @@ export function Portfolio() {
             >
               {item}
             </a>
-          ))}
+            ))}
+          <button
+            type="button"
+            className="mobile-quickscan"
+            onClick={() => {
+              setMenu(false);
+              setQuickScanOpen(true);
+            }}
+          >
+            <Zap /> Recruiter quick scan
+          </button>
         </nav>
         <div className="header-actions">
           <button
@@ -1532,18 +1649,18 @@ export function Portfolio() {
 
           <div className="hero-stats reveal">
             <div className="stat-item">
-              <span className="stat-value">
-                {data.experience.length ? `${data.experience.length}+` : '2+'}
-              </span>
-              <span className="stat-label">Roles</span>
+              <span className="stat-value">3</span>
+              <span className="stat-label">Focus areas</span>
             </div>
             <div className="stat-item">
               <span className="stat-value">{data.projects.length}</span>
               <span className="stat-label">Projects</span>
             </div>
             <div className="stat-item">
-              <span className="stat-value">{totalSkills}+</span>
-              <span className="stat-label">Tech Skills</span>
+              <span className="stat-value">
+                {data.certifications?.length ?? 0}
+              </span>
+              <span className="stat-label">Certification</span>
             </div>
           </div>
 
@@ -1588,33 +1705,22 @@ export function Portfolio() {
           </div>
 
           <div className="hero-actions">
-            <a className="primary-link" href="#projects">
+            <a
+              className="primary-link"
+              href="#projects"
+              onClick={() => trackConversion('view_projects')}
+            >
               View projects <ArrowUpRight />
             </a>
-            <button
-              type="button"
-              className="secondary-link"
-              onClick={() => setBookingModalOpen(true)}
-              aria-label="Schedule a 15-minute intro chat"
-            >
-              Book a call <CalendarDays />
-            </button>
-            <button
-              type="button"
-              className="secondary-link"
-              onClick={() => setResumeModalOpen(true)}
-              aria-label="Preview résumé in modal"
-            >
-              Preview Resume <Eye />
-            </button>
             <a
               className="secondary-link"
               href={data.resumeUrl || '#'}
               target={isDataResume ? undefined : '_blank'}
               rel="noreferrer"
               download={isDataResume ? 'resume.pdf' : undefined}
+              onClick={() => trackConversion('download_resume')}
             >
-              Download <Download />
+              Download résumé <Download />
             </a>
           </div>
         </section>
@@ -1626,8 +1732,8 @@ export function Portfolio() {
             </h2>
           </div>
           <p className="section-subtitle">
-            A track record of shipping impactful software, crafting features,
-            and driving team momentum.
+            Enterprise modernisation work focused on maintainability,
+            continuity, and safer delivery.
           </p>
           <div className="timeline">
             {data.experience.map((item, i) => (
@@ -1659,8 +1765,8 @@ export function Portfolio() {
             </h2>
           </div>
           <p className="section-subtitle">
-            Languages, frameworks, tools, and practices I work with to build
-            resilient, elegant systems.
+            Technologies and working practices used across Salesforce, .NET,
+            integrations, and enterprise delivery.
           </p>
           <div className="skill-grid">
             {data.skills.map((group, i) => (
@@ -1693,11 +1799,11 @@ export function Portfolio() {
             </h2>
           </div>
           <p className="section-subtitle">
-            Crafted digital products and open experiments focusing on usability,
-            architecture, and design fidelity.
+            Selected Salesforce builds with implementation details, integration
+            choices, and working demos where verification is available.
           </p>
 
-          {allTags.length > 2 && (
+          {data.projects.length >= 5 && allTags.length > 2 && (
             <div className="project-filter-bar">
               {allTags.map((tag) => (
                 <button
@@ -1740,6 +1846,20 @@ export function Portfolio() {
                   <h3>{project.title}</h3>
                 </div>
 
+                <div className="project-architecture">
+                  <span className="project-architecture-label">
+                    Implementation flow
+                  </span>
+                  <div>
+                    {project.stack.slice(0, 3).map((technology, index) => (
+                      <span key={technology}>
+                        {index > 0 && <b aria-hidden="true">→</b>}
+                        {technology}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
                 {(() => {
                   const bullets = parseBullets(project.description);
                   if (
@@ -1768,26 +1888,29 @@ export function Portfolio() {
                   ))}
                 </div>
 
-                {(project.liveUrl || project.githubUrl) && (
+                {(isLiveProject(project.liveUrl) ||
+                  isGitHubRepository(project.githubUrl)) && (
                   <div className="project-links">
-                    {project.liveUrl && (
+                    {isLiveProject(project.liveUrl) && (
                       <a
                         href={project.liveUrl}
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`${project.title} live site`}
+                        onClick={() => trackConversion('open_project_demo')}
                       >
-                        Live project <ArrowUpRight />
+                        View live demo <ArrowUpRight />
                       </a>
                     )}
-                    {project.githubUrl && (
+                    {isGitHubRepository(project.githubUrl) && (
                       <a
                         href={project.githubUrl}
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`${project.title} GitHub`}
+                        onClick={() => trackConversion('open_project_code')}
                       >
-                        Code <GitFork />
+                        View source <GitFork />
                       </a>
                     )}
                   </div>
@@ -2055,12 +2178,15 @@ export function Portfolio() {
 
       {/* Recruiter Quick Scan Modal */}
       <Dialog open={quickScanOpen} onOpenChange={setQuickScanOpen}>
-        <DialogContent className="quickscan-dialog">
-          <DialogHeader>
+        <DialogContent
+          ref={quickScanRef}
+          initialFocus={quickScanRef}
+          className="quickscan-dialog"
+        >
+          <DialogHeader className="quickscan-header">
             <DialogTitle>Recruiter & HR Quick Scan</DialogTitle>
             <DialogDescription>
-              A high-density technical executive summary for rapid candidate
-              assessment.
+              Role fit, core capabilities, and project evidence at a glance.
             </DialogDescription>
           </DialogHeader>
 
@@ -2117,7 +2243,7 @@ export function Portfolio() {
             <div className="quickscan-pills">
               {data.skills
                 .flatMap((s) => s.items)
-                .slice(0, 16)
+                .slice(0, 8)
                 .map((skill) => (
                   <span key={skill} className="quickscan-pill">
                     {skill}
@@ -2127,7 +2253,7 @@ export function Portfolio() {
           </div>
 
           <div className="quickscan-section">
-            <h4>Key Projects & Proven Highlights</h4>
+            <h4>Selected project evidence</h4>
             <ul
               style={{
                 margin: '0.4rem 0 0',
@@ -2153,6 +2279,7 @@ export function Portfolio() {
               type="button"
               className="primary-link"
               onClick={() => {
+                trackConversion('preview_resume');
                 setQuickScanOpen(false);
                 setResumeModalOpen(true);
               }}
@@ -2162,6 +2289,7 @@ export function Portfolio() {
             <a
               className="secondary-link"
               href={`mailto:${data.contact.email || data.hero.email}`}
+              onClick={() => trackConversion('email_from_quick_scan')}
             >
               <Mail /> Email directly
             </a>

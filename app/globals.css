@@ -1068,6 +1068,45 @@ main {
   flex-grow: 1;
 }
 
+.project-architecture {
+  margin: 1rem 0 0.25rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+}
+
+.project-architecture-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.project-architecture > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.project-architecture > div > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.project-architecture b {
+  color: var(--project-accent);
+  font-weight: 500;
+}
+
 .project-card .stack {
   margin-top: auto;
   padding: 0.75rem 0 1.25rem;
@@ -1398,6 +1437,10 @@ main {
   flex-shrink: 0;
 }
 
+.mobile-quickscan {
+  display: none;
+}
+
 /* Quick Scan Modal Body */
 .quickscan-dialog {
   max-width: 680px !important;
@@ -1408,6 +1451,17 @@ main {
   background: var(--card) !important;
   border: 1px solid var(--line) !important;
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4) !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.quickscan-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0 2.5rem 0.85rem 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
 }
 
 .quickscan-hero {
@@ -2378,6 +2432,28 @@ footer a:hover {
   .nav-links a[aria-current="location"] {
     border-radius: 0.5rem;
   }
+  .recruiter-btn {
+    display: none;
+  }
+  .mobile-quickscan {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    color: var(--foreground);
+    font-size: 1rem;
+    font-weight: 650;
+    text-align: left;
+  }
+  .mobile-quickscan svg {
+    width: 1rem;
+    height: 1rem;
+  }
   .menu-button {
     display: inline-flex;
   }
@@ -2468,8 +2544,24 @@ footer a:hover {
     font-size: 1.25rem;
   }
   .hero-stats {
-    grid-template-columns: 1fr;
-    gap: 0.6rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+    padding: 0.75rem 0.5rem;
+  }
+  .stat-item {
+    align-items: center;
+    min-width: 0;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 1.1rem;
+  }
+  .stat-label {
+    font-size: 0.62rem;
+  }
+  .quickscan-dialog {
+    width: calc(100vw - 1rem) !important;
+    max-height: 88dvh;
   }
   .skill-grid,
   .project-grid {
@@ -2489,10 +2581,6 @@ footer a:hover {
     flex: 1 1 calc(50% - 0.5rem);
     min-width: 140px;
     text-align: center;
-  }
-  .recruiter-btn {
-    padding: 0 0.85rem;
-    font-size: 0.8rem;
   }
   footer {
     font-size: 0.8125rem;
