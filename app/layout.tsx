@@ -36,12 +36,21 @@ export const metadata: Metadata = {
     title: 'Vishal R. Patil — Salesforce & .NET Developer',
     description:
       'Enterprise modernisation, Salesforce automation, Lightning Web Components, and secure integration work.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Vishal R. Patil — Salesforce & .NET Developer',
+      },
+    ],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Vishal R. Patil — Salesforce & .NET Developer',
     description:
       'Enterprise modernisation, Salesforce automation, Lightning Web Components, and secure integration work.',
+    images: ['/og-image.png'],
   },
   robots: {
     index: true,
@@ -69,6 +78,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Apply the saved or system theme before paint to avoid a light/dark flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('portfolio-theme');var d=t?t==='dark':!window.matchMedia('(prefers-color-scheme: light)').matches;document.documentElement.classList.toggle('dark',d)}catch(e){document.documentElement.classList.add('dark')}`,
+          }}
+        />
+        {/* Scroll-reveal content starts hidden; show it when scripts are off. */}
+        <noscript>
+          <style>
+            {'.reveal-fade{opacity:1!important;transform:none!important}'}
+          </style>
+        </noscript>
+      </head>
       <body
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

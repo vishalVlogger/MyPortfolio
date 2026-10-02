@@ -17,12 +17,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  Clock,
   Code2,
   Copy,
   Download,
   ExternalLink,
-  FileText,
   GitFork,
   GraduationCap,
   Layers,
@@ -30,35 +28,34 @@ import {
   Menu,
   Moon,
   Pencil,
-  Plus,
   Quote,
-  Save,
   Sparkles,
   Sun,
-  Trash2,
   Wrench,
   X,
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { defaultPortfolio, type PortfolioData } from "@/lib/portfolio";
+import {
+  cleanPortfolio,
+  findPortfolioIssue,
+  isGitHubRepository,
+  isLiveProject,
+  parseBullets,
+  preparePortfolio,
+} from "@/lib/portfolio-content";
+import { trackConversion } from "@/lib/analytics";
+import { VERSION_HEADER } from "@/lib/portfolio-validation";
+import { moveInlineFiles, uploadFile } from "@/lib/uploads";
 import { ContactForm } from "@/components/contact-form";
+import { Editor } from "@/components/portfolio-editor";
+import {
+  BookingDialog,
+  QuickScanDialog,
+  ResumeDialog,
+} from "@/components/portfolio-dialogs";
 
 const nav = [
   "About",
@@ -70,107 +67,6 @@ const nav = [
   "Testimonials",
   "Contact",
 ];
-const accents = ["#c7ff4a", "#70a5ff", "#ff8b6a", "#d6a7ff", "#6de2c5"];
-const legacyAvailabilityLabels = new Set([
-  "Open to Salesforce & Gen AI Opportunity",
-  "Open to Salesforce & Gen AI opportunities",
-]);
-
-function normalizeUrl(value: string) {
-  return value.trim().replace(/\/$/, "").toLowerCase();
-}
-
-function isGitHubRepository(value: string) {
-  if (!value) return false;
-  try {
-    const url = new URL(value);
-    return (
-      url.hostname === "github.com" &&
-      url.pathname.split("/").filter(Boolean).length >= 2
-    );
-  } catch {
-    return false;
-  }
-}
-
-function isLiveProject(value: string) {
-  if (!value) return false;
-  try {
-    return new URL(value).hostname !== "github.com";
-  } catch {
-    return false;
-  }
-}
-
-function upgradeLegacyContent(content: PortfolioData): PortfolioData {
-  const legacyExperience =
-    content.experience[0]?.company === "Relisoft Technologies" &&
-    content.experience[0]?.bullets[0]?.startsWith(
-      "Contributing to the modernisation",
-    );
-  const ownerLinkedIn = normalizeUrl(content.hero.linkedin);
-
-  return {
-    ...content,
-    hero: {
-      ...content.hero,
-      role:
-        content.hero.role === "Software Developer" ||
-        content.hero.role === "Salesforce & .NET Develope"
-          ? defaultPortfolio.hero.role
-          : content.hero.role,
-      tagline: content.hero.tagline.startsWith(
-        "Building scalable business applications",
-      )
-        ? defaultPortfolio.hero.tagline
-        : content.hero.tagline,
-      bio: content.hero.bio.startsWith("Software Developer focused on")
-        ? defaultPortfolio.hero.bio
-        : content.hero.bio,
-      availability: legacyAvailabilityLabels.has(
-        content.hero.availability.trim(),
-      )
-        ? defaultPortfolio.hero.availability
-        : content.hero.availability,
-    },
-    experience: legacyExperience
-      ? content.experience.map((item, index) =>
-          index === 0
-            ? { ...item, bullets: defaultPortfolio.experience[0].bullets }
-            : item,
-        )
-      : content.experience,
-    projects: content.projects.map((project) => ({
-      ...project,
-      liveUrl: isLiveProject(project.liveUrl) ? project.liveUrl : "",
-      githubUrl: isGitHubRepository(project.githubUrl) ? project.githubUrl : "",
-    })),
-    testimonials: (content.testimonials ?? []).filter(
-      (testimonial) =>
-        !(
-          testimonial.name.trim().toLowerCase() === "engineering lead" &&
-          normalizeUrl(testimonial.linkedInUrl ?? "") === ownerLinkedIn
-        ),
-    ),
-    contact: {
-      ...content.contact,
-      note: content.contact.note.startsWith(
-        "I'm open to Salesforce, enterprise application development",
-      )
-        ? defaultPortfolio.contact.note
-        : content.contact.note,
-    },
-  };
-}
-
-function trackConversion(name: string) {
-  const analyticsWindow = window as Window & {
-    dataLayer?: Array<Record<string, string>>;
-    zaraz?: { track?: (event: string, properties?: object) => void };
-  };
-  analyticsWindow.dataLayer?.push({ event: "portfolio_conversion", name });
-  analyticsWindow.zaraz?.track?.("portfolio_conversion", { name });
-}
 
 function getCategoryIcon(cat: string) {
   const lower = cat.toLowerCase();
@@ -198,929 +94,12 @@ function getCategoryIcon(cat: string) {
   return <Zap />;
 }
 
-function parseBullets(text: string): string[] {
-  if (!text) return [];
-  const raw = text.trim();
-  let points: string[] = [];
-  if (/(?:^|\n)\s*[-•*]\s+/.test(raw)) {
-    const parts = raw.split(/(?:^|\n)\s*[-•*]\s+/);
-    points = parts.map((p) => p.trim()).filter(Boolean);
-  } else if (/\s+[-•*]\s+/.test(raw)) {
-    const parts = raw.split(/\s+[-•*]\s+/);
-    points = parts.map((p) => p.trim()).filter(Boolean);
-  } else {
-    points = raw
-      .split(/\r?\n+/)
-      .map((p) => p.trim())
-      .filter(Boolean);
-  }
-  return points.map((p) => p.replace(/\s*\n\s*/g, " "));
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  multiline = false,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  multiline?: boolean;
-}) {
-  return (
-    <label className="editor-field">
-      <span>{label}</span>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={4}
-        />
-      ) : (
-        <input value={value} onChange={(e) => onChange(e.target.value)} />
-      )}
-    </label>
+export function Portfolio({ initialData }: { initialData?: PortfolioData }) {
+  const [data, setData] = useState<PortfolioData>(
+    initialData ?? defaultPortfolio,
   );
-}
-
-/** Preserve the raw text while focused; parsing must not eat a typed comma. */
-function ListField({
-  label,
-  items,
-  onChange,
-}: {
-  label: string;
-  items: string[];
-  onChange: (items: string[]) => void;
-}) {
-  const [draft, setDraft] = useState<string | null>(null);
-  return (
-    <label className="editor-field">
-      <span>{label}</span>
-      <input
-        value={draft ?? items.join(", ")}
-        onFocus={(event) => setDraft(event.currentTarget.value)}
-        onChange={(event) => {
-          const text = event.currentTarget.value;
-          setDraft(text);
-          onChange([
-            ...new Set(
-              text
-                .split(",")
-                .map((item) => item.trim())
-                .filter(Boolean),
-            ),
-          ]);
-        }}
-        onBlur={() => setDraft(null)}
-      />
-    </label>
-  );
-}
-
-function compressImage(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (file.size > 8 * 1024 * 1024) {
-      reject(new Error("Image is larger than 8 MB."));
-      return;
-    }
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      reject(new Error("Choose a JPEG, PNG, or WebP image."));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Failed to read the image."));
-    reader.onload = () => {
-      const img = new window.Image();
-      img.onerror = () => reject(new Error("The selected image is invalid."));
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const maxDim = 600;
-        let { width, height } = img;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          resolve(reader.result as string);
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-        const result = canvas.toDataURL("image/jpeg", 0.82);
-        if (result.length > 900_000) {
-          reject(new Error("The compressed image is still too large."));
-          return;
-        }
-        resolve(result);
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (file.type !== "application/pdf") {
-      reject(new Error("Choose a PDF document."));
-      return;
-    }
-    if (file.size > 900_000) {
-      reject(
-        new Error("PDF is larger than 900 KB. Link to a hosted PDF instead."),
-      );
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function FileUploadField({
-  label,
-  accept,
-  value,
-  onChange,
-  preview = false,
-}: {
-  label: string;
-  accept: string;
-  value: string;
-  onChange: (dataUrl: string) => void;
-  preview?: boolean;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [showUrlInput, setShowUrlInput] = useState(false);
-
-  const isDataUrl = value?.startsWith("data:");
-  const isImage =
-    preview ||
-    value?.startsWith("data:image") ||
-    /\.(png|jpe?g|gif|webp|svg)$/i.test(value ?? "");
-
-  const displayInfo = (() => {
-    if (!value) return null;
-    if (isDataUrl) {
-      const approxKb = Math.round((value.length * 3) / 4 / 1024);
-      return isImage
-        ? `Uploaded image (~${approxKb} KB)`
-        : `Uploaded document (~${approxKb} KB)`;
-    }
-    return value.length > 35 ? "…" + value.slice(-32) : value;
-  })();
-
-  async function handleFile(file: File) {
-    setBusy(true);
-    setError("");
-    try {
-      if (isImage || file.type.startsWith("image/")) {
-        const compressed = await compressImage(file);
-        onChange(compressed);
-      } else {
-        const dataUrl = await readFileAsDataUrl(file);
-        onChange(dataUrl);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to read file.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="editor-field">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <span>{label}</span>
-        <button
-          type="button"
-          className="upload-toggle"
-          onClick={() => setShowUrlInput(!showUrlInput)}
-        >
-          {showUrlInput ? "Use file upload" : "Paste URL instead"}
-        </button>
-      </div>
-
-      <input
-        ref={inputRef}
-        type="file"
-        accept={accept}
-        style={{ display: "none" }}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) void handleFile(f);
-          e.target.value = "";
-        }}
-      />
-
-      {showUrlInput ? (
-        <input
-          type="text"
-          placeholder="https://... or /file.pdf"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      ) : (
-        <>
-          {preview && isImage && value && (
-            <div className="upload-preview">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={value} alt="Preview" />
-            </div>
-          )}
-          <div className="upload-row">
-            <button
-              type="button"
-              className="upload-btn"
-              onClick={() => inputRef.current?.click()}
-              disabled={busy}
-            >
-              {busy ? "Processing…" : value ? "Replace file" : "Choose file"}
-            </button>
-            {displayInfo && (
-              <span className="upload-filename" title={displayInfo}>
-                {displayInfo}
-              </span>
-            )}
-            {value && (
-              <button
-                type="button"
-                className="upload-clear"
-                onClick={() => {
-                  onChange("");
-                  setError("");
-                }}
-                aria-label="Remove file"
-              >
-                <X />
-              </button>
-            )}
-          </div>
-        </>
-      )}
-
-      {error && <p className="upload-error">{error}</p>}
-    </div>
-  );
-}
-
-function Editor({
-  data,
-  setData,
-  onSave,
-  saving,
-  saved,
-  error,
-}: {
-  data: PortfolioData;
-  setData: (data: PortfolioData) => void;
-  onSave: () => void;
-  saving: boolean;
-  saved: boolean;
-  error: string;
-}) {
-  const hero = (key: keyof PortfolioData["hero"], value: string) =>
-    setData({ ...data, hero: { ...data.hero, [key]: value } });
-  return (
-    <SheetContent className="editor-panel" side="right">
-      <SheetHeader className="editor-head">
-        <SheetTitle>Portfolio editor</SheetTitle>
-        <SheetDescription>
-          Every visible detail lives here. Changes are published when you save.
-        </SheetDescription>
-      </SheetHeader>
-      <div className="editor-body">
-        <details open>
-          <summary>Hero & profile</summary>
-          <div className="editor-group">
-            <Field
-              label="Name"
-              value={data.hero.name}
-              onChange={(v) => hero("name", v)}
-            />
-            <Field
-              label="Role"
-              value={data.hero.role}
-              onChange={(v) => hero("role", v)}
-            />
-            <Field
-              label="Tagline"
-              value={data.hero.tagline}
-              onChange={(v) => hero("tagline", v)}
-              multiline
-            />
-            <Field
-              label="Bio"
-              value={data.hero.bio}
-              onChange={(v) => hero("bio", v)}
-              multiline
-            />
-            <Field
-              label="Location"
-              value={data.hero.location}
-              onChange={(v) => hero("location", v)}
-            />
-            <Field
-              label="Availability"
-              value={data.hero.availability}
-              onChange={(v) => hero("availability", v)}
-            />
-            <FileUploadField
-              label="Photo"
-              accept="image/jpeg,image/png,image/webp"
-              value={data.hero.photoUrl}
-              onChange={(v) => hero("photoUrl", v)}
-              preview
-            />
-            <Field
-              label="GitHub URL"
-              value={data.hero.github}
-              onChange={(v) => hero("github", v)}
-            />
-            <Field
-              label="LinkedIn URL"
-              value={data.hero.linkedin}
-              onChange={(v) => hero("linkedin", v)}
-            />
-            <Field
-              label="Email"
-              value={data.hero.email}
-              onChange={(v) => hero("email", v)}
-            />
-            <Field
-              label="Calendar / Meeting link (e.g. Cal.com or Calendly)"
-              value={data.hero.calendarUrl ?? ""}
-              onChange={(v) => hero("calendarUrl", v)}
-            />
-          </div>
-        </details>
-
-        <details>
-          <summary>Experience</summary>
-          <div className="editor-group">
-            {data.experience.map((item, i) => (
-              <div className="editor-card" key={i}>
-                <button
-                  aria-label="Remove role"
-                  onClick={() =>
-                    setData({
-                      ...data,
-                      experience: data.experience.filter((_, x) => x !== i),
-                    })
-                  }
-                >
-                  <Trash2 />
-                </button>
-                <Field
-                  label="Company"
-                  value={item.company}
-                  onChange={(v) => {
-                    const a = [...data.experience];
-                    a[i] = { ...item, company: v };
-                    setData({ ...data, experience: a });
-                  }}
-                />
-                <Field
-                  label="Title"
-                  value={item.title}
-                  onChange={(v) => {
-                    const a = [...data.experience];
-                    a[i] = { ...item, title: v };
-                    setData({ ...data, experience: a });
-                  }}
-                />
-                <Field
-                  label="Dates"
-                  value={item.dates}
-                  onChange={(v) => {
-                    const a = [...data.experience];
-                    a[i] = { ...item, dates: v };
-                    setData({ ...data, experience: a });
-                  }}
-                />
-                <Field
-                  label="Impact (one per line)"
-                  value={item.bullets.join("\n")}
-                  multiline
-                  onChange={(v) => {
-                    const a = [...data.experience];
-                    a[i] = { ...item, bullets: v.split("\n") };
-                    setData({ ...data, experience: a });
-                  }}
-                />
-              </div>
-            ))}
-            <button
-              className="add-button"
-              onClick={() =>
-                setData({
-                  ...data,
-                  experience: [
-                    ...data.experience,
-                    {
-                      company: "Company",
-                      title: "Role",
-                      dates: "Year — Year",
-                      bullets: ["Describe your impact."],
-                    },
-                  ],
-                })
-              }
-            >
-              <Plus /> Add role
-            </button>
-          </div>
-        </details>
-
-        <details>
-          <summary>Skills</summary>
-          <div className="editor-group">
-            {data.skills.map((group, i) => (
-              <div className="editor-card" key={i}>
-                <button
-                  aria-label="Remove skill group"
-                  onClick={() =>
-                    setData({
-                      ...data,
-                      skills: data.skills.filter((_, x) => x !== i),
-                    })
-                  }
-                >
-                  <Trash2 />
-                </button>
-                <Field
-                  label="Category"
-                  value={group.category}
-                  onChange={(v) => {
-                    const a = [...data.skills];
-                    a[i] = { ...group, category: v };
-                    setData({ ...data, skills: a });
-                  }}
-                />
-                <ListField
-                  label="Skills (comma separated)"
-                  items={group.items}
-                  onChange={(items) => {
-                    const a = [...data.skills];
-                    a[i] = { ...group, items };
-                    setData({ ...data, skills: a });
-                  }}
-                />
-              </div>
-            ))}
-            <button
-              className="add-button"
-              onClick={() =>
-                setData({
-                  ...data,
-                  skills: [
-                    ...data.skills,
-                    { category: "Category", items: ["Skill"] },
-                  ],
-                })
-              }
-            >
-              <Plus /> Add group
-            </button>
-          </div>
-        </details>
-
-        <details>
-          <summary>Projects</summary>
-          <div className="editor-group">
-            {data.projects.map((project, i) => (
-              <div className="editor-card" key={i}>
-                <button
-                  aria-label="Remove project"
-                  onClick={() =>
-                    setData({
-                      ...data,
-                      projects: data.projects.filter((_, x) => x !== i),
-                    })
-                  }
-                >
-                  <Trash2 />
-                </button>
-                <Field
-                  label="Title"
-                  value={project.title}
-                  onChange={(v) => {
-                    const a = [...data.projects];
-                    a[i] = { ...project, title: v };
-                    setData({ ...data, projects: a });
-                  }}
-                />
-                <Field
-                  label="Description"
-                  value={project.description}
-                  multiline
-                  onChange={(v) => {
-                    const a = [...data.projects];
-                    a[i] = { ...project, description: v };
-                    setData({ ...data, projects: a });
-                  }}
-                />
-                <ListField
-                  label="Tech stack (comma separated)"
-                  items={project.stack}
-                  onChange={(stack) => {
-                    const a = [...data.projects];
-                    a[i] = { ...project, stack };
-                    setData({ ...data, projects: a });
-                  }}
-                />
-                <Field
-                  label="Live URL"
-                  value={project.liveUrl}
-                  onChange={(v) => {
-                    const a = [...data.projects];
-                    a[i] = { ...project, liveUrl: v };
-                    setData({ ...data, projects: a });
-                  }}
-                />
-                <Field
-                  label="GitHub URL"
-                  value={project.githubUrl}
-                  onChange={(v) => {
-                    const a = [...data.projects];
-                    a[i] = { ...project, githubUrl: v };
-                    setData({ ...data, projects: a });
-                  }}
-                />
-                <FileUploadField
-                  label="Screenshot / Mockup"
-                  accept="image/jpeg,image/png,image/webp"
-                  value={project.imageUrl ?? ""}
-                  onChange={(v) => {
-                    const a = [...data.projects];
-                    a[i] = { ...project, imageUrl: v };
-                    setData({ ...data, projects: a });
-                  }}
-                  preview
-                />
-                <label className="color-field">
-                  <span>Accent</span>
-                  <input
-                    type="color"
-                    value={project.accent}
-                    onChange={(e) => {
-                      const a = [...data.projects];
-                      a[i] = { ...project, accent: e.target.value };
-                      setData({ ...data, projects: a });
-                    }}
-                  />
-                </label>
-              </div>
-            ))}
-            <button
-              className="add-button"
-              onClick={() =>
-                setData({
-                  ...data,
-                  projects: [
-                    ...data.projects,
-                    {
-                      title: "New project",
-                      description: "What it does and why it matters.",
-                      stack: ["React"],
-                      liveUrl: "https://example.com",
-                      githubUrl: "https://github.com/",
-                      accent: accents[data.projects.length % accents.length],
-                      imageUrl: "",
-                    },
-                  ],
-                })
-              }
-            >
-              <Plus /> Add project
-            </button>
-          </div>
-        </details>
-
-        <details>
-          <summary>Certifications & Badges</summary>
-          <div className="editor-group">
-            {(data.certifications ?? []).map((cert, i) => (
-              <div className="editor-card" key={i}>
-                <button
-                  aria-label="Remove certification"
-                  onClick={() => {
-                    const list = (data.certifications ?? []).filter(
-                      (_, x) => x !== i,
-                    );
-                    setData({ ...data, certifications: list });
-                  }}
-                >
-                  <Trash2 />
-                </button>
-                <Field
-                  label="Certification name"
-                  value={cert.name}
-                  onChange={(v) => {
-                    const list = [...(data.certifications ?? [])];
-                    list[i] = { ...cert, name: v };
-                    setData({ ...data, certifications: list });
-                  }}
-                />
-                <Field
-                  label="Issuing organization"
-                  value={cert.issuer}
-                  onChange={(v) => {
-                    const list = [...(data.certifications ?? [])];
-                    list[i] = { ...cert, issuer: v };
-                    setData({ ...data, certifications: list });
-                  }}
-                />
-                <Field
-                  label="Date / Year"
-                  value={cert.date}
-                  onChange={(v) => {
-                    const list = [...(data.certifications ?? [])];
-                    list[i] = { ...cert, date: v };
-                    setData({ ...data, certifications: list });
-                  }}
-                />
-                <Field
-                  label="Verification URL"
-                  value={cert.credentialUrl ?? ""}
-                  onChange={(v) => {
-                    const list = [...(data.certifications ?? [])];
-                    list[i] = { ...cert, credentialUrl: v };
-                    setData({ ...data, certifications: list });
-                  }}
-                />
-              </div>
-            ))}
-            <button
-              className="add-button"
-              onClick={() =>
-                setData({
-                  ...data,
-                  certifications: [
-                    ...(data.certifications ?? []),
-                    {
-                      name: "New Certification",
-                      issuer: "Issuer (e.g. Salesforce, AWS)",
-                      date: "2024",
-                      credentialUrl: "",
-                    },
-                  ],
-                })
-              }
-            >
-              <Plus /> Add certification
-            </button>
-          </div>
-        </details>
-
-        <details>
-          <summary>Education</summary>
-          <div className="editor-group">
-            {(data.education ?? []).map((edu, i) => (
-              <div className="editor-card" key={i}>
-                <button
-                  aria-label="Remove education"
-                  onClick={() => {
-                    const list = (data.education ?? []).filter(
-                      (_, x) => x !== i,
-                    );
-                    setData({ ...data, education: list });
-                  }}
-                >
-                  <Trash2 />
-                </button>
-                <Field
-                  label="Institution / University"
-                  value={edu.institution}
-                  onChange={(v) => {
-                    const list = [...(data.education ?? [])];
-                    list[i] = { ...edu, institution: v };
-                    setData({ ...data, education: list });
-                  }}
-                />
-                <Field
-                  label="Degree / Field of study"
-                  value={edu.degree}
-                  onChange={(v) => {
-                    const list = [...(data.education ?? [])];
-                    list[i] = { ...edu, degree: v };
-                    setData({ ...data, education: list });
-                  }}
-                />
-                <Field
-                  label="Dates"
-                  value={edu.dates}
-                  onChange={(v) => {
-                    const list = [...(data.education ?? [])];
-                    list[i] = { ...edu, dates: v };
-                    setData({ ...data, education: list });
-                  }}
-                />
-                <Field
-                  label="Details / Highlights"
-                  value={edu.details ?? ""}
-                  multiline
-                  onChange={(v) => {
-                    const list = [...(data.education ?? [])];
-                    list[i] = { ...edu, details: v };
-                    setData({ ...data, education: list });
-                  }}
-                />
-              </div>
-            ))}
-            <button
-              className="add-button"
-              onClick={() =>
-                setData({
-                  ...data,
-                  education: [
-                    ...(data.education ?? []),
-                    {
-                      institution: "University Name",
-                      degree: "Degree / Course",
-                      dates: "2020 — 2024",
-                      details: "",
-                    },
-                  ],
-                })
-              }
-            >
-              <Plus /> Add education
-            </button>
-          </div>
-        </details>
-
-        <details>
-          <summary>Testimonials & Recommendations</summary>
-          <div className="editor-group">
-            {(data.testimonials ?? []).map((test, i) => (
-              <div className="editor-card" key={i}>
-                <button
-                  aria-label="Remove recommendation"
-                  onClick={() => {
-                    const list = (data.testimonials ?? []).filter(
-                      (_, x) => x !== i,
-                    );
-                    setData({ ...data, testimonials: list });
-                  }}
-                >
-                  <Trash2 />
-                </button>
-                <Field
-                  label="Recommender Name"
-                  value={test.name}
-                  onChange={(v) => {
-                    const list = [...(data.testimonials ?? [])];
-                    list[i] = { ...test, name: v };
-                    setData({ ...data, testimonials: list });
-                  }}
-                />
-                <Field
-                  label="Role / Title"
-                  value={test.role}
-                  onChange={(v) => {
-                    const list = [...(data.testimonials ?? [])];
-                    list[i] = { ...test, role: v };
-                    setData({ ...data, testimonials: list });
-                  }}
-                />
-                <Field
-                  label="Company / Team"
-                  value={test.company}
-                  onChange={(v) => {
-                    const list = [...(data.testimonials ?? [])];
-                    list[i] = { ...test, company: v };
-                    setData({ ...data, testimonials: list });
-                  }}
-                />
-                <Field
-                  label="Quote / Recommendation"
-                  value={test.quote}
-                  multiline
-                  onChange={(v) => {
-                    const list = [...(data.testimonials ?? [])];
-                    list[i] = { ...test, quote: v };
-                    setData({ ...data, testimonials: list });
-                  }}
-                />
-                <Field
-                  label="LinkedIn Profile URL"
-                  value={test.linkedInUrl ?? ""}
-                  onChange={(v) => {
-                    const list = [...(data.testimonials ?? [])];
-                    list[i] = { ...test, linkedInUrl: v };
-                    setData({ ...data, testimonials: list });
-                  }}
-                />
-                <FileUploadField
-                  label="Photo / Avatar (optional)"
-                  accept="image/jpeg,image/png,image/webp"
-                  value={test.avatarUrl ?? ""}
-                  onChange={(v) => {
-                    const list = [...(data.testimonials ?? [])];
-                    list[i] = { ...test, avatarUrl: v };
-                    setData({ ...data, testimonials: list });
-                  }}
-                  preview
-                />
-              </div>
-            ))}
-            <button
-              className="add-button"
-              onClick={() =>
-                setData({
-                  ...data,
-                  testimonials: [
-                    ...(data.testimonials ?? []),
-                    {
-                      name: "Colleague Name",
-                      role: "Senior Engineering Manager",
-                      company: "Company Name",
-                      quote:
-                        "Describe how you contributed and delivered results with high ownership.",
-                      linkedInUrl: "https://linkedin.com",
-                      avatarUrl: "",
-                    },
-                  ],
-                })
-              }
-            >
-              <Plus /> Add recommendation
-            </button>
-          </div>
-        </details>
-
-        <details>
-          <summary>Learning, resume & contact</summary>
-          <div className="editor-group">
-            <ListField
-              label="Currently learning (comma separated)"
-              items={data.learning}
-              onChange={(learning) => setData({ ...data, learning })}
-            />
-            <FileUploadField
-              label="Resume (PDF)"
-              accept="application/pdf,.pdf"
-              value={data.resumeUrl}
-              onChange={(v) => setData({ ...data, resumeUrl: v })}
-            />
-            <Field
-              label="Receive contact messages at"
-              value={data.contact.email ?? ""}
-              onChange={(email) =>
-                setData({ ...data, contact: { ...data.contact, email } })
-              }
-            />
-            <Field
-              label="Contact heading"
-              value={data.contact.heading}
-              onChange={(v) =>
-                setData({ ...data, contact: { ...data.contact, heading: v } })
-              }
-            />
-            <Field
-              label="Contact note"
-              value={data.contact.note}
-              multiline
-              onChange={(v) =>
-                setData({ ...data, contact: { ...data.contact, note: v } })
-              }
-            />
-          </div>
-        </details>
-      </div>
-      <div className="editor-save">
-        {error && <p role="alert">{error}</p>}
-        <Button onClick={onSave} disabled={saving}>
-          {saved ? <Check /> : <Save />}
-          {saving ? "Saving…" : saved ? "Saved" : "Save & publish"}
-        </Button>
-      </div>
-    </SheetContent>
-  );
-}
-
-export function Portfolio() {
-  const [data, setData] = useState<PortfolioData>(defaultPortfolio);
-  const [loading, setLoading] = useState(true);
+  // Server-rendered content is already current, so it doesn't need dimming.
+  const [loading, setLoading] = useState(!initialData);
   const [dark, setDark] = useState(true);
   const [menu, setMenu] = useState(false);
   const [activeSection, setActiveSection] = useState("about");
@@ -1128,6 +107,9 @@ export function Portfolio() {
   const [saved, setSaved] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [conflict, setConflict] = useState(false);
+  // Version of the published record this page loaded; sent back on save.
+  const version = useRef<string | null>(null);
   const [editorNotice, setEditorNotice] = useState("");
   const [copied, setCopied] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -1138,10 +120,22 @@ export function Portfolio() {
   const [hasContent, setHasContent] = useState(true);
   const lastLoaded = useRef("");
   const dataRef = useRef(data);
+  const serverRendered = useRef(Boolean(initialData));
+  const [savedSnapshot, setSavedSnapshot] = useState("");
+  const dirty =
+    canEdit && savedSnapshot !== "" && JSON.stringify(data) !== savedSnapshot;
 
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
+
+  // Warn before closing the tab with unpublished editor changes.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   useEffect(() => {
     if (!canEdit) return;
@@ -1199,12 +193,21 @@ export function Portfolio() {
                 ...(csrfToken.current
                   ? { "x-portfolio-csrf": csrfToken.current }
                   : {}),
+                ...(version.current !== null
+                  ? { [VERSION_HEADER]: version.current }
+                  : {}),
               },
               body: JSON.stringify(next),
             });
+            if (response.status === 409)
+              throw new Error(
+                "The portfolio changed elsewhere. Reload the page, then try again.",
+              );
             if (!response.ok)
               throw new Error("The profile could not be saved.");
+            version.current = response.headers.get(VERSION_HEADER);
             lastLoaded.current = JSON.stringify(next);
+            setSavedSnapshot(lastLoaded.current);
             dataRef.current = next;
             setData(next);
             return { updated: Object.keys(update), name: next.hero.name };
@@ -1217,16 +220,19 @@ export function Portfolio() {
   }, [canEdit]);
 
   useEffect(() => {
-    const theme = localStorage.getItem("portfolio-theme");
-    const isDark = theme ? theme === "dark" : true;
+    // The pre-paint script in the layout has already applied the theme class.
+    const isDark = document.documentElement.classList.contains("dark");
     queueMicrotask(() => setDark(isDark));
-    document.documentElement.classList.toggle("dark", isDark);
     let active = true;
     let pending = false;
+    let lastRefresh = 0;
+    let countedView = false;
     const refresh = async () => {
       // Returning from the hosted editor refreshes the view without losing local drafts.
+      // Throttled so ordinary tab switching doesn't refetch on every focus.
       if (
         pending ||
+        Date.now() - lastRefresh < 30_000 ||
         (lastLoaded.current &&
           JSON.stringify(dataRef.current) !== lastLoaded.current)
       )
@@ -1240,6 +246,7 @@ export function Portfolio() {
         if (!contentResponse.ok || !sessionResponse.ok)
           throw new Error("Connection failed");
         const content = (await contentResponse.json()) as PortfolioData;
+        const loadedVersion = contentResponse.headers.get(VERSION_HEADER);
         const session = (await sessionResponse.json()) as {
           canEdit: boolean;
           csrfToken?: string;
@@ -1254,33 +261,26 @@ export function Portfolio() {
           JSON.stringify(dataRef.current) !== lastLoaded.current
         )
           return;
-        const next = upgradeLegacyContent({
-          ...content,
-          hero: {
-            ...defaultPortfolio.hero,
-            ...content.hero,
-            calendarUrl:
-              content.hero?.calendarUrl ??
-              defaultPortfolio.hero.calendarUrl ??
-              "",
-          },
-          education: content.education ?? defaultPortfolio.education ?? [],
-          certifications:
-            content.certifications ?? defaultPortfolio.certifications ?? [],
-          testimonials:
-            content.testimonials ?? defaultPortfolio.testimonials ?? [],
-          contact: { ...defaultPortfolio.contact, ...content.contact },
-        });
+        const next = preparePortfolio(content);
+        version.current = loadedVersion;
         lastLoaded.current = JSON.stringify(next);
+        setSavedSnapshot(lastLoaded.current);
         dataRef.current = next;
         setData(next);
         setCanEdit(session.canEdit);
+        // One page view per load, once we know it isn't the owner editing.
+        if (!countedView) {
+          countedView = true;
+          if (!session.canEdit) trackConversion("page_view");
+        }
         csrfToken.current = session.csrfToken ?? "";
         setEditorNotice(session.editorNotice ?? "");
         setHasContent(true);
         setLoadError("");
+        lastRefresh = Date.now();
       } catch {
-        if (active)
+        // A server-rendered page is already showing current content.
+        if (active && !serverRendered.current)
           setLoadError(
             "Could not load the latest portfolio. Check your connection, then retry.",
           );
@@ -1326,6 +326,39 @@ export function Portfolio() {
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [data, selectedTag, hasContent]);
+
+  // Close the mobile menu on Escape or a click outside the header.
+  useEffect(() => {
+    if (!menu) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenu(false);
+    };
+    const onPointer = (event: PointerEvent) => {
+      if (!(event.target as Element | null)?.closest?.(".topbar"))
+        setMenu(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
+    };
+  }, [menu]);
+
+  // Feed pointer position to the .spotlight-card hover glow.
+  useEffect(() => {
+    const onMove = (event: PointerEvent) => {
+      const card = (event.target as Element | null)?.closest?.(
+        ".spotlight-card",
+      ) as HTMLElement | null;
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty("--mouse-x", `${event.clientX - rect.left}px`);
+      card.style.setProperty("--mouse-y", `${event.clientY - rect.top}px`);
+    };
+    document.addEventListener("pointermove", onMove, { passive: true });
+    return () => document.removeEventListener("pointermove", onMove);
+  }, []);
 
   // Keep navigation in sync with scrolling, including the sections between links.
   useEffect(() => {
@@ -1405,21 +438,15 @@ export function Portfolio() {
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const quickScanRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!quickScanOpen) return;
-    const resetScroll = window.setTimeout(() => {
-      quickScanRef.current?.focus({ preventScroll: true });
-      quickScanRef.current?.scrollTo({ top: 0 });
-    }, 0);
-    return () => window.clearTimeout(resetScroll);
-  }, [quickScanOpen]);
+  const upload = (file: Blob) => uploadFile(file, csrfToken.current);
 
-  const save = async () => {
+  /** `overwrite` skips the version check after the owner confirms a conflict. */
+  const save = async (overwrite = false) => {
     setSaving(true);
     setSaved(false);
     setSaveError("");
+    setConflict(false);
     try {
       // Refresh the local CSRF token without replacing the user's unsaved draft.
       const sessionResponse = await fetch("/api/session", {
@@ -1436,6 +463,11 @@ export function Portfolio() {
           "Editing is locked. Check your owner connection; your draft has been kept.",
         );
       csrfToken.current = session.csrfToken ?? "";
+      // Blank lines left while editing would otherwise fail server validation,
+      // and files from older saves move out of the content record.
+      const draft = await moveInlineFiles(cleanPortfolio(data), upload);
+      const issue = findPortfolioIssue(draft);
+      if (issue) throw new Error(issue);
       const response = await fetch("/api/content", {
         method: "PUT",
         headers: {
@@ -1443,14 +475,23 @@ export function Portfolio() {
           ...(csrfToken.current
             ? { "x-portfolio-csrf": csrfToken.current }
             : {}),
+          ...(!overwrite && version.current !== null
+            ? { [VERSION_HEADER]: version.current }
+            : {}),
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(draft),
       });
-      let result: { ok?: boolean; error?: string } = {};
+      let result: { ok?: boolean; error?: string; conflict?: boolean } = {};
       try {
-        result = (await response.json()) as { ok?: boolean; error?: string };
+        result = (await response.json()) as typeof result;
       } catch {
         // Handle non-JSON responses
+      }
+      if (response.status === 409 && result.conflict) {
+        setConflict(true);
+        throw new Error(
+          "Someone saved a newer version after you opened the editor. Reload to see it, or overwrite it with your version.",
+        );
       }
       if (!response.ok || !result.ok) {
         throw new Error(
@@ -1460,8 +501,11 @@ export function Portfolio() {
               : `Save failed (${response.status}). Your draft has been kept.`),
         );
       }
-      lastLoaded.current = JSON.stringify(data);
-      dataRef.current = data;
+      version.current = response.headers.get(VERSION_HEADER);
+      lastLoaded.current = JSON.stringify(draft);
+      setSavedSnapshot(lastLoaded.current);
+      dataRef.current = draft;
+      setData(draft);
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
     } catch (error) {
@@ -1512,10 +556,14 @@ export function Portfolio() {
           aria-label="Main navigation"
         >
           {nav
-            .filter(
-              (item) =>
-                item !== "Testimonials" || Boolean(data.testimonials?.length),
-            )
+            .filter((item) => {
+              if (item === "Testimonials")
+                return Boolean(data.testimonials?.length);
+              if (item === "Education") return Boolean(data.education?.length);
+              if (item === "Certifications")
+                return Boolean(data.certifications?.length);
+              return true;
+            })
             .map((item) => (
               <a
                 key={item}
@@ -1537,6 +585,7 @@ export function Portfolio() {
             onClick={() => {
               setMenu(false);
               setQuickScanOpen(true);
+              trackConversion("open_quick_scan");
             }}
           >
             <Zap /> Recruiter quick scan
@@ -1546,7 +595,10 @@ export function Portfolio() {
           <button
             type="button"
             className="recruiter-btn"
-            onClick={() => setQuickScanOpen(true)}
+            onClick={() => {
+              setQuickScanOpen(true);
+              trackConversion("open_quick_scan");
+            }}
             aria-label="Open recruiter quick scan"
           >
             <Zap /> Quick Scan
@@ -1573,9 +625,13 @@ export function Portfolio() {
               <Editor
                 data={data}
                 setData={setData}
-                onSave={save}
+                onSave={() => void save()}
+                onOverwrite={() => void save(true)}
+                upload={upload}
+                conflict={conflict}
                 saving={saving}
                 saved={saved}
+                dirty={dirty}
                 error={saveError}
               />
             </Sheet>
@@ -1652,18 +708,24 @@ export function Portfolio() {
 
           <div className="hero-stats reveal">
             <div className="stat-item">
-              <span className="stat-value">3</span>
-              <span className="stat-label">Focus areas</span>
+              <span className="stat-value">{data.skills.length}</span>
+              <span className="stat-label">Skill areas</span>
             </div>
             <div className="stat-item">
               <span className="stat-value">{data.projects.length}</span>
-              <span className="stat-label">Projects</span>
+              <span className="stat-label">
+                {data.projects.length === 1 ? "Project" : "Projects"}
+              </span>
             </div>
             <div className="stat-item">
               <span className="stat-value">
                 {data.certifications?.length ?? 0}
               </span>
-              <span className="stat-label">Certification</span>
+              <span className="stat-label">
+                {data.certifications?.length === 1
+                  ? "Certification"
+                  : "Certifications"}
+              </span>
             </div>
           </div>
 
@@ -1942,18 +1004,18 @@ export function Portfolio() {
           </div>
         </section>
 
-        <section className="section education-section" id="education">
-          <div className="section-heading">
-            <h2>
-              <GraduationCap /> Education
-            </h2>
-          </div>
-          <p className="section-subtitle">
-            Academic qualifications, university degrees, and foundation in
-            computer science.
-          </p>
+        {data.education && data.education.length > 0 && (
+          <section className="section education-section" id="education">
+            <div className="section-heading">
+              <h2>
+                <GraduationCap /> Education
+              </h2>
+            </div>
+            <p className="section-subtitle">
+              Academic qualifications, university degrees, and foundation in
+              computer science.
+            </p>
 
-          {data.education && data.education.length > 0 && (
             <div className="education-grid">
               {data.education.map((edu, i) => (
                 <article
@@ -1973,21 +1035,24 @@ export function Portfolio() {
                 </article>
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
-        <section className="section certifications-section" id="certifications">
-          <div className="section-heading">
-            <h2>
-              <Award /> Certifications & Badges
-            </h2>
-          </div>
-          <p className="section-subtitle">
-            Industry-recognized credentials, certified expertise, and technical
-            validations.
-          </p>
+        {data.certifications && data.certifications.length > 0 && (
+          <section
+            className="section certifications-section"
+            id="certifications"
+          >
+            <div className="section-heading">
+              <h2>
+                <Award /> Certifications & Badges
+              </h2>
+            </div>
+            <p className="section-subtitle">
+              Industry-recognized credentials, certified expertise, and
+              technical validations.
+            </p>
 
-          {data.certifications && data.certifications.length > 0 && (
             <div className="credentials-grid">
               {data.certifications.map((cert, i) => (
                 <article
@@ -2017,8 +1082,8 @@ export function Portfolio() {
                 </article>
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {data.testimonials && data.testimonials.length > 0 && (
           <section className="section testimonials-section" id="testimonials">
@@ -2186,300 +1251,26 @@ export function Portfolio() {
         </section>
       </main>
 
-      {/* Recruiter Quick Scan Modal */}
-      <Dialog open={quickScanOpen} onOpenChange={setQuickScanOpen}>
-        <DialogContent
-          ref={quickScanRef}
-          initialFocus={quickScanRef}
-          className="quickscan-dialog"
-          showCloseButton={false}
-        >
-          <DialogHeader className="quickscan-header">
-            <div className="quickscan-header-copy">
-              <DialogTitle>Recruiter & HR Quick Scan</DialogTitle>
-              <DialogDescription>
-                Role fit, core capabilities, and project evidence at a glance.
-              </DialogDescription>
-            </div>
-            <DialogClose
-              render={
-                <button
-                  type="button"
-                  className="quickscan-close"
-                  aria-label="Close recruiter quick scan"
-                />
-              }
-            >
-              <X aria-hidden="true" />
-            </DialogClose>
-          </DialogHeader>
-
-          <div className="quickscan-hero">
-            <div className="quickscan-portrait">
-              {data.hero.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={data.hero.photoUrl} alt={data.hero.name} />
-              ) : (
-                <div
-                  style={{
-                    display: "grid",
-                    placeItems: "center",
-                    height: "100%",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {initials}
-                </div>
-              )}
-            </div>
-            <div className="quickscan-meta">
-              <h2>{data.hero.name}</h2>
-              <p>{data.hero.role}</p>
-              <div className="quickscan-badge-row">
-                <span className="quickscan-badge active-status">
-                  <span
-                    className="status-dot"
-                    style={{ width: 6, height: 6 }}
-                  />{" "}
-                  {data.hero.availability}
-                </span>
-                <span className="quickscan-badge">📍 {data.hero.location}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="quickscan-section">
-            <h4>Executive Overview</h4>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "0.88rem",
-                color: "var(--muted)",
-                lineHeight: 1.6,
-              }}
-            >
-              {data.hero.bio}
-            </p>
-          </div>
-
-          <div className="quickscan-section">
-            <h4>Primary Tech Stack & Capabilities</h4>
-            <div className="quickscan-pills">
-              {data.skills
-                .flatMap((s) => s.items)
-                .slice(0, 8)
-                .map((skill) => (
-                  <span key={skill} className="quickscan-pill">
-                    {skill}
-                  </span>
-                ))}
-            </div>
-          </div>
-
-          <div className="quickscan-section">
-            <h4>Selected project evidence</h4>
-            <ul
-              style={{
-                margin: "0.4rem 0 0",
-                paddingLeft: "1.2rem",
-                fontSize: "0.86rem",
-                color: "var(--muted)",
-                lineHeight: 1.6,
-              }}
-            >
-              {data.projects.map((p) => (
-                <li key={p.title} style={{ marginBottom: "0.45rem" }}>
-                  <strong style={{ color: "var(--foreground)" }}>
-                    {p.title}
-                  </strong>{" "}
-                  — {parseBullets(p.description)[0] || p.description}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="quickscan-actions">
-            <button
-              type="button"
-              className="primary-link"
-              onClick={() => {
-                trackConversion("preview_resume");
-                setQuickScanOpen(false);
-                setResumeModalOpen(true);
-              }}
-            >
-              <FileText /> Preview Full Resume
-            </button>
-            <a
-              className="secondary-link"
-              href={`mailto:${data.contact.email || data.hero.email}`}
-              onClick={() => trackConversion("email_from_quick_scan")}
-            >
-              <Mail /> Email directly
-            </a>
-            <a
-              className="secondary-link"
-              href={data.hero.linkedin}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <BriefcaseBusiness /> LinkedIn
-            </a>
-            <a
-              className="secondary-link"
-              href={data.hero.github}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <GitFork /> GitHub
-            </a>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Direct In-Browser Resume Preview Modal */}
-      <Dialog open={resumeModalOpen} onOpenChange={setResumeModalOpen}>
-        <DialogContent
-          className="quickscan-dialog"
-          style={{ maxWidth: 780, width: "min(780px, calc(100vw - 2rem))" }}
-        >
-          <DialogHeader>
-            <DialogTitle>Interactive Résumé Preview</DialogTitle>
-            <DialogDescription>
-              Inspect candidate credentials directly in-browser or download for
-              your records.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="resume-preview-frame">
-            {data.resumeUrl ? (
-              <iframe
-                src={data.resumeUrl}
-                title="Candidate Résumé Preview"
-                style={{ width: "100%", height: "100%", border: "none" }}
-              />
-            ) : (
-              <div
-                style={{
-                  display: "grid",
-                  placeItems: "center",
-                  height: "100%",
-                  color: "var(--muted)",
-                }}
-              >
-                No résumé has been uploaded yet.
-              </div>
-            )}
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "1rem",
-            }}
-          >
-            <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
-              {isDataResume
-                ? "Direct document upload"
-                : "Hosted remote document"}
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <a
-                className="primary-link"
-                href={data.resumeUrl || "#"}
-                download={isDataResume ? "resume.pdf" : undefined}
-                target={isDataResume ? undefined : "_blank"}
-                rel="noreferrer"
-              >
-                <Download /> Download Copy
-              </a>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Quick 15-Minute Intro & Calendar Booking Modal */}
-      <Dialog open={bookingModalOpen} onOpenChange={setBookingModalOpen}>
-        <DialogContent className="booking-dialog">
-          <DialogHeader>
-            <DialogTitle>Let’s Connect & Talk</DialogTitle>
-            <DialogDescription>
-              Schedule an intro call or send a direct inquiry about roles,
-              contracts, or engineering projects.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="booking-body">
-            <div className="booking-hero-card">
-              <span className="booking-status-indicator" />
-              <div>
-                <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700 }}>
-                  Currently {data.hero.availability}
-                </h4>
-                <p
-                  style={{
-                    margin: "0.2rem 0 0",
-                    fontSize: "0.82rem",
-                    color: "var(--muted)",
-                  }}
-                >
-                  Typically replies within 24 hours · Fast turnaround
-                </p>
-              </div>
-            </div>
-
-            <div className="booking-pills">
-              <span className="booking-pill">
-                <Clock /> 15–30 Min Intro
-              </span>
-              <span className="booking-pill">
-                <CalendarDays /> Google Meet / Zoom
-              </span>
-              <span className="booking-pill">📍 {data.hero.location}</span>
-            </div>
-
-            <div className="booking-actions">
-              {data.hero.calendarUrl ? (
-                <a
-                  className="booking-primary-btn"
-                  href={data.hero.calendarUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <CalendarDays /> Book instant slot on calendar{" "}
-                  <ArrowUpRight />
-                </a>
-              ) : (
-                <a
-                  className="booking-primary-btn"
-                  href={`mailto:${data.contact.email || data.hero.email}?subject=Intro%20Chat%20%2F%20Opportunity&body=Hi%20${encodeURIComponent(data.hero.name)}%2C%0A%0AI%20came%20across%20your%20portfolio%20and%20would%20love%20to%20connect%20for%20a%20brief%2015-minute%20intro%20chat%20regarding%20an%20opportunity.`}
-                >
-                  <Mail /> Schedule via email <ArrowUpRight />
-                </a>
-              )}
-
-              <a
-                className="booking-secondary-btn"
-                href={`mailto:${data.contact.email || data.hero.email}`}
-              >
-                <Mail /> Send direct email:{" "}
-                {data.contact.email || data.hero.email}
-              </a>
-
-              <a
-                className="booking-secondary-btn"
-                href={data.hero.linkedin}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <BriefcaseBusiness /> Message on LinkedIn <ExternalLink />
-              </a>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <QuickScanDialog
+        data={data}
+        open={quickScanOpen}
+        onOpenChange={setQuickScanOpen}
+        initials={initials}
+        onPreviewResume={() => {
+          setQuickScanOpen(false);
+          setResumeModalOpen(true);
+        }}
+      />
+      <ResumeDialog
+        data={data}
+        open={resumeModalOpen}
+        onOpenChange={setResumeModalOpen}
+      />
+      <BookingDialog
+        data={data}
+        open={bookingModalOpen}
+        onOpenChange={setBookingModalOpen}
+      />
 
       <button
         type="button"

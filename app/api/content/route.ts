@@ -1,9 +1,13 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { portfolioContent } from '@/db/schema';
 import { defaultPortfolio, type PortfolioData } from '@/lib/portfolio';
 import { canPublishPortfolio } from '@/lib/owner-auth';
-import { isPortfolioData, readLimitedJson } from '@/lib/portfolio-validation';
+import {
+  VERSION_HEADER,
+  isPortfolioData,
+  readLimitedJson,
+} from '@/lib/portfolio-validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,13 +25,17 @@ export async function GET() {
     if (record) {
       const parsed: unknown = JSON.parse(record.data);
       if (isPortfolioData(parsed)) {
-        return Response.json(parsed, { headers: responseHeaders });
+        return Response.json(parsed, {
+          headers: { ...responseHeaders, [VERSION_HEADER]: record.updatedAt },
+        });
       }
     }
   } catch {
     // Public reads remain available from the checked-in fallback if D1 is unavailable.
   }
-  return Response.json(defaultPortfolio, { headers: responseHeaders });
+  return Response.json(defaultPortfolio, {
+    headers: { ...responseHeaders, [VERSION_HEADER]: '' },
+  });
 }
 
 export async function PUT(request: Request) {
@@ -62,14 +70,52 @@ export async function PUT(request: Request) {
   }
   try {
     const now = new Date().toISOString();
-    await getDb()
-      .insert(portfolioContent)
-      .values({ id: 1, data: JSON.stringify(data), updatedAt: now })
-      .onConflictDoUpdate({
-        target: portfolioContent.id,
-        set: { data: JSON.stringify(data), updatedAt: now },
-      });
-    return Response.json({ ok: true }, { headers: responseHeaders });
+    const body = JSON.stringify(data);
+    const expected = request.headers.get(VERSION_HEADER);
+    const db = getDb();
+    if (expected === null) {
+      // No version supplied: an explicit overwrite.
+      await db
+        .insert(portfolioContent)
+        .values({ id: 1, data: body, updatedAt: now })
+        .onConflictDoUpdate({
+          target: portfolioContent.id,
+          set: { data: body, updatedAt: now },
+        });
+    } else {
+      // Write only if the record is still the version the editor loaded.
+      const result =
+        expected === ''
+          ? await db
+              .insert(portfolioContent)
+              .values({ id: 1, data: body, updatedAt: now })
+              .onConflictDoNothing()
+              .run()
+          : await db
+              .update(portfolioContent)
+              .set({ data: body, updatedAt: now })
+              .where(
+                and(
+                  eq(portfolioContent.id, 1),
+                  eq(portfolioContent.updatedAt, expected),
+                ),
+              )
+              .run();
+      if (!result.meta.changes) {
+        return Response.json(
+          {
+            error:
+              'The portfolio was changed elsewhere after you opened the editor.',
+            conflict: true,
+          },
+          { status: 409, headers: responseHeaders },
+        );
+      }
+    }
+    return Response.json(
+      { ok: true, version: now },
+      { headers: { ...responseHeaders, [VERSION_HEADER]: now } },
+    );
   } catch {
     return Response.json(
       { error: 'Portfolio storage is temporarily unavailable.' },

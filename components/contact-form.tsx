@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type SyntheticEvent } from "react";
 import { CheckCircle2, Send } from "lucide-react";
+import { trackConversion } from "@/lib/analytics";
 
 /** Native POST keeps FormSubmit's CAPTCHA and email verification flow intact. */
 export function ContactForm({ recipient }: { recipient: string }) {
@@ -39,6 +40,7 @@ export function ContactForm({ recipient }: { recipient: string }) {
       return;
     }
     setSubmitting(true);
+    trackConversion("contact_submit");
   }
 
   return (

@@ -1,6 +1,10 @@
 import type { IncomingMessage } from 'node:http';
 import type { Plugin } from 'vite';
-import { MAX_PORTFOLIO_BYTES } from '../lib/portfolio-validation.ts';
+import { MAX_FILE_BYTES, isStoredFileType } from '../lib/files.ts';
+import {
+  MAX_PORTFOLIO_BYTES,
+  VERSION_HEADER,
+} from '../lib/portfolio-validation.ts';
 
 export function isTrustedLocalRequest(request: IncomingMessage): boolean {
   const port = request.socket.localPort;
@@ -50,13 +54,27 @@ export function portfolioSync(
       if (!origin) return;
       const remoteOrigin = origin;
       server.middlewares.use(async (request, response, next) => {
-        const path = request.url?.split('?')[0];
-        if (path !== '/api/content' && path !== '/api/session') return next();
-        const reply = (status: number, body: unknown) => {
+        const path = request.url?.split('?')[0] ?? '';
+        const handled = [
+          '/api/content',
+          '/api/session',
+          '/api/files',
+          '/api/events',
+          '/api/stats',
+        ];
+        if (!handled.includes(path) && !path.startsWith('/files/'))
+          return next();
+        const reply = (
+          status: number,
+          body: unknown,
+          extraHeaders: Record<string, string> = {},
+        ) => {
           response.statusCode = status;
           response.setHeader('Content-Type', 'application/json');
           response.setHeader('Cache-Control', 'no-store');
           response.setHeader('X-Content-Type-Options', 'nosniff');
+          for (const [name, value] of Object.entries(extraHeaders))
+            response.setHeader(name, value);
           response.end(JSON.stringify(body));
         };
         // Block LAN access, DNS rebinding and requests initiated by other websites.
@@ -64,6 +82,86 @@ export function portfolioSync(
           return reply(403, {
             error: 'Use this editor directly on localhost.',
           });
+        // Local browsing shouldn't inflate the published site's statistics.
+        if (path === '/api/events') {
+          response.statusCode = 204;
+          return response.end();
+        }
+        const isOwnerWrite = (method: string) =>
+          request.method === method &&
+          configured &&
+          request.headers.origin === `http://${request.headers.host}` &&
+          request.headers['x-portfolio-csrf'] === csrf;
+        const readBody = async (limit: number) => {
+          const chunks: Buffer[] = [];
+          let size = 0;
+          for await (const chunk of request) {
+            const buffer = Buffer.from(chunk);
+            size += buffer.length;
+            if (size > limit) return null;
+            chunks.push(buffer);
+          }
+          return Buffer.concat(chunks);
+        };
+        try {
+          // Uploaded files are public; show the published copies locally.
+          if (path.startsWith('/files/')) {
+            if (request.method !== 'GET')
+              return reply(405, { error: 'Method not allowed.' });
+            const upstream = await fetch(new URL(path, remoteOrigin), {
+              redirect: 'error',
+              signal: AbortSignal.timeout(15000),
+            });
+            response.statusCode = upstream.status;
+            for (const name of ['content-type', 'cache-control']) {
+              const value = upstream.headers.get(name);
+              if (value) response.setHeader(name, value);
+            }
+            response.setHeader('X-Content-Type-Options', 'nosniff');
+            return response.end(Buffer.from(await upstream.arrayBuffer()));
+          }
+          if (path === '/api/files') {
+            if (!isOwnerWrite('POST'))
+              return reply(403, {
+                error:
+                  'Editor session expired or not connected. Refresh the page and try again.',
+              });
+            const type = request.headers['content-type']?.split(';')[0].trim();
+            if (!type || !isStoredFileType(type))
+              return reply(415, {
+                error: 'Upload a JPEG, PNG, WebP, or PDF file.',
+              });
+            const file = await readBody(MAX_FILE_BYTES);
+            if (!file)
+              return reply(413, { error: 'Files must be 1.9 MB or smaller.' });
+            const upstream = await fetch(new URL('/api/files', remoteOrigin), {
+              method: 'POST',
+              body: file,
+              headers: {
+                'Content-Type': type,
+                'x-portfolio-sync-key': syncKey!,
+              },
+              redirect: 'error',
+              signal: AbortSignal.timeout(30000),
+            });
+            return reply(upstream.status, await upstream.json());
+          }
+          if (path === '/api/stats') {
+            if (request.method !== 'GET' || !configured)
+              return reply(403, { error: 'Owner only.' });
+            const upstream = await fetch(new URL('/api/stats', remoteOrigin), {
+              headers: { 'x-portfolio-sync-key': syncKey! },
+              redirect: 'error',
+              signal: AbortSignal.timeout(10000),
+            });
+            return reply(upstream.status, await upstream.json());
+          }
+        } catch {
+          return reply(502, {
+            error:
+              'Cannot reach the published portfolio. Check your connection.',
+          });
+        }
         if (
           !['GET', 'PUT'].includes(request.method ?? '') ||
           (path === '/api/session' && request.method !== 'GET')
@@ -132,6 +230,7 @@ export function portfolioSync(
               return reply(400, { error: 'Invalid JSON.' });
             }
           }
+          const version = request.headers[VERSION_HEADER];
           const upstream = await fetch(new URL('/api/content', remoteOrigin), {
             method: request.method,
             body,
@@ -142,6 +241,9 @@ export function portfolioSync(
                 ? {
                     'Content-Type': 'application/json',
                     'x-portfolio-sync-key': syncKey!,
+                    ...(typeof version === 'string'
+                      ? { [VERSION_HEADER]: version }
+                      : {}),
                   }
                 : {}),
             },
@@ -152,7 +254,14 @@ export function portfolioSync(
             !upstream.headers.get('content-type')?.includes('application/json')
           )
             throw new Error('Unavailable');
-          return reply(upstream.status, await upstream.json());
+          const upstreamVersion = upstream.headers.get(VERSION_HEADER);
+          return reply(
+            upstream.status,
+            await upstream.json(),
+            upstreamVersion !== null
+              ? { [VERSION_HEADER]: upstreamVersion }
+              : {},
+          );
         } catch {
           if (path === '/api/session')
             return reply(200, {

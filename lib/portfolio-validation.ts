@@ -3,6 +3,12 @@ import type { PortfolioData } from './portfolio.ts';
 export const MAX_PORTFOLIO_BYTES = 1_750_000;
 export const MAX_DATA_URL_LENGTH = 1_400_000;
 
+/**
+ * The stored record's updatedAt doubles as its version. Editors send back the
+ * version they loaded so a save can't silently overwrite newer content.
+ */
+export const VERSION_HEADER = 'x-portfolio-version';
+
 const limits = {
   short: 200,
   medium: 1_000,
@@ -22,7 +28,7 @@ function text(value: unknown, max: number = limits.medium, required = true) {
   );
 }
 
-function optionalText(value: unknown, max = limits.medium) {
+function optionalText(value: unknown, max: number = limits.medium) {
   return value === undefined || text(value, max, false);
 }
 
@@ -148,10 +154,18 @@ export function isPortfolioData(value: unknown): value is PortfolioData {
   if (!assetUrl(value.resumeUrl, 'pdf')) return false;
   if (
     !isRecord(contact) ||
-    !exactKeys(contact, ['heading', 'note', 'email']) ||
+    !exactKeys(contact, [
+      'heading',
+      'note',
+      'email',
+      'responseNote',
+      'meetingNote',
+    ]) ||
     !text(contact.heading, limits.short) ||
     !text(contact.note, limits.long) ||
-    !email(contact.email, true)
+    !email(contact.email, true) ||
+    !optionalText(contact.responseNote, limits.short) ||
+    !optionalText(contact.meetingNote, limits.short)
   )
     return false;
   if (

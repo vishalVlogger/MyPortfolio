@@ -58,7 +58,14 @@ export type PortfolioData = {
   certifications?: Certification[];
   testimonials?: Testimonial[];
   resumeUrl: string;
-  contact: { heading: string; note: string; email?: string };
+  contact: {
+    heading: string;
+    note: string;
+    email?: string;
+    /** Shown in the booking dialog; falls back to a default when unset. */
+    responseNote?: string;
+    meetingNote?: string;
+  };
 };
 
 export const defaultPortfolio: PortfolioData = {

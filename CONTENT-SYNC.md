@@ -67,3 +67,51 @@ Do not deploy with the generated dist/server/wrangler.json. Its local D1
 configuration deliberately uses a placeholder database ID and is suitable for
 local runtime testing only. Also avoid automatic deploy-on-save: incomplete
 local edits must never be pushed directly to the public portfolio.
+
+## Schema changes need the hosted code first
+
+The hosted API rejects fields it doesn't know. When a release adds new content
+fields (for example the optional booking notes under **Learning, resume &
+contact**), deploy the new site version before filling those fields in from the
+local editor. Until then, leave them blank: blank optional fields are not sent.
+
+## Link-preview image
+
+`public/og-image.png` is generated from the default profile content and
+`public/profile.jpg`. After changing your name, role, or photo, regenerate it:
+
+    node --experimental-strip-types scripts/generate-og-image.mjs
+
+## Uploaded files
+
+Photos, screenshots, avatars and résumé PDFs uploaded in the editor are stored
+in the `portfolio_files` D1 table (one file per row, up to 1.9 MB) and served
+from `/files/<hash>` with long-lived caching. The content record only holds the
+short URL. Files from older saves that were embedded as `data:` URLs are moved
+into file storage automatically the next time you save.
+
+Uploads go through the same protected path as saves: the local server adds the
+private key, and the hosted `/api/files` endpoint rejects anything without it or
+whose bytes don't match a JPEG, PNG, WebP or PDF. Replaced files are not deleted
+yet; they're small and unreferenced.
+
+The `0001` migration creates the new tables. The Sites deployment applies the
+files in `drizzle/`; deploy the new version before uploading from the editor.
+
+## Save conflicts
+
+Each save sends the version of the published record the page loaded. If it was
+changed elsewhere in the meantime (another window, the WebMCP profile tool), the
+save is refused and the editor offers **Reload latest** or **Overwrite with my
+version**. Your draft is kept either way until you choose.
+
+## Visitor statistics
+
+The site counts a fixed list of anonymous events per day (page views, résumé
+previews and downloads, demo/source clicks, quick-scan opens, contact sends).
+No cookies, IPs or visitor identifiers are stored, and obvious bots are
+ignored. Your own editing sessions and local development don't count. See the
+totals under **Edit site → Visitor statistics (30 days)**.
+
+Restart `npm run dev` after pulling these changes: the local proxy plugin is
+loaded once at startup.
